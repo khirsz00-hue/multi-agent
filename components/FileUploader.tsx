@@ -18,10 +18,32 @@ interface UploadingFile {
   error?: string
 }
 
+// Sanitize filename to remove emoji and special characters
+function sanitizeFileName(fileName: string): string {
+  // Remove emoji and special characters
+  const nameWithoutEmoji = fileName.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]/gu, '')
+  
+  // Replace spaces with underscores
+  const nameWithUnderscores = nameWithoutEmoji.replace(/\s+/g, '_')
+  
+  // Remove any remaining special characters except dots, dashes, underscores
+  const cleanName = nameWithUnderscores.replace(/[^a-zA-Z0-9._-]/g, '')
+  
+  // Ensure the name isn't empty
+  if (!cleanName || cleanName === '.') {
+    return `file_${Date.now()}.bin`
+  }
+  
+  return cleanName
+}
+
 export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([])
   const [dragActive, setDragActive] = useState(false)
   const supabase = createClient()
+  
+  // Maximum file size: 10MB
+  const MAX_FILE_SIZE = 10 * 1024 * 1024
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -51,14 +73,38 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
   }, [])
 
   const handleFiles = async (files: File[]) => {
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      alert('Please sign in to upload files')
+      return
+    }
+
     const newUploadingFiles = files.map(file => ({ file, progress: 0 }))
     setUploadingFiles(prev => [...prev, ...newUploadingFiles])
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
+      
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        setUploadingFiles(prev =>
+          prev.map((f, idx) =>
+            idx === i
+              ? { ...f, error: 'File too large (max 10MB)', progress: 0 }
+              : f
+          )
+        )
+        continue
+      }
+      
       try {
-        // Upload to Supabase Storage
-        const filePath = `${agentId}/${Date.now()}_${file.name}`
+        // Sanitize filename
+        const sanitizedFileName = sanitizeFileName(file.name)
+        
+        // Use userId in path to match RLS policies
+        const filePath = `${user.id}/${agentId}/${Date.now()}_${sanitizedFileName}`
         
         // Update progress to show upload starting
         setUploadingFiles(prev =>
@@ -109,12 +155,27 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileId: fileData.id }),
         })
-      } catch (error) {
+      } catch (error: any) {
         console.error('Upload error:', error)
+        
+        // Provide detailed error messages
+        let errorMessage = 'Failed to upload file'
+        
+        if (error.message?.includes('Invalid key')) {
+          errorMessage = 'Invalid file name. Please use only letters, numbers, and basic punctuation.'
+        } else if (error.message?.includes('row-level security')) {
+          errorMessage = 'Permission denied. Please make sure you are logged in.'
+        } else if (error.message?.includes('not found')) {
+          errorMessage = 'Storage bucket not configured. Please contact support.'
+        } else if (error.message) {
+          errorMessage = error.message
+        }
+        
+        // Update UI with error
         setUploadingFiles(prev =>
           prev.map((f, idx) =>
             idx === i
-              ? { ...f, error: error instanceof Error ? error.message : 'Upload failed' }
+              ? { ...f, error: errorMessage, progress: 0 }
               : f
           )
         )
