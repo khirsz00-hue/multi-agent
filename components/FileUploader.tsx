@@ -16,15 +16,16 @@ interface UploadingFile {
   file: File
   progress: number
   error?: string
+  id: string // Unique identifier for tracking
 }
+
+// Emoji Unicode ranges to remove from filenames
+const EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{1F100}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F910}-\u{1F96B}]|[\u{1F980}-\u{1F9E0}]/gu
 
 // Sanitize filename to remove emoji and special characters
 function sanitizeFileName(fileName: string): string {
-  // Remove emoji - expanded regex to cover more Unicode ranges
-  const nameWithoutEmoji = fileName.replace(
-    /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{1F100}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F910}-\u{1F96B}]|[\u{1F980}-\u{1F9E0}]/gu,
-    ''
-  )
+  // Remove emoji using expanded Unicode ranges
+  const nameWithoutEmoji = fileName.replace(EMOJI_REGEX, '')
   
   // Replace spaces with underscores
   const nameWithUnderscores = nameWithoutEmoji.replace(/\s+/g, '_')
@@ -84,17 +85,22 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
       return
     }
 
-    const newUploadingFiles = files.map(file => ({ file, progress: 0 }))
+    const newUploadingFiles = files.map(file => ({ 
+      file, 
+      progress: 0,
+      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`
+    }))
     setUploadingFiles(prev => [...prev, ...newUploadingFiles])
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
+      const uploadId = newUploadingFiles[i].id
       
       // Validate file size
       if (file.size > MAX_FILE_SIZE) {
         setUploadingFiles(prev =>
           prev.map((f) =>
-            f.file.name === file.name && f.file.size === file.size
+            f.id === uploadId
               ? { ...f, error: 'File too large (max 10MB)', progress: 0 }
               : f
           )
@@ -112,7 +118,7 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
         // Update progress to show upload starting
         setUploadingFiles(prev =>
           prev.map((f) =>
-            f.file.name === file.name && f.file.size === file.size && !f.error
+            f.id === uploadId
               ? { ...f, progress: 50 }
               : f
           )
@@ -127,7 +133,7 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
         // Update progress to show upload complete
         setUploadingFiles(prev =>
           prev.map((f) =>
-            f.file.name === file.name && f.file.size === file.size && !f.error
+            f.id === uploadId
               ? { ...f, progress: 100 }
               : f
           )
@@ -150,7 +156,7 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
 
         // Remove from uploading list
         setUploadingFiles(prev => 
-          prev.filter((f) => !(f.file.name === file.name && f.file.size === file.size))
+          prev.filter((f) => f.id !== uploadId)
         )
 
         // Call callback
@@ -183,7 +189,7 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
         // Update UI with error
         setUploadingFiles(prev =>
           prev.map((f) =>
-            f.file.name === file.name && f.file.size === file.size
+            f.id === uploadId
               ? { ...f, error: errorMessage, progress: 0 }
               : f
           )
