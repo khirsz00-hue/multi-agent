@@ -59,20 +59,26 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
       try {
         // Upload to Supabase Storage
         const filePath = `${agentId}/${Date.now()}_${file.name}`
+        
+        // Update progress to show upload starting
+        setUploadingFiles(prev =>
+          prev.map((f, idx) =>
+            idx === i ? { ...f, progress: 50 } : f
+          )
+        )
+        
         const { data: storageData, error: storageError } = await supabase.storage
           .from('agent-files')
-          .upload(filePath, file, {
-            onUploadProgress: (progress) => {
-              const percentage = (progress.loaded / progress.total) * 100
-              setUploadingFiles(prev =>
-                prev.map((f, idx) =>
-                  idx === i ? { ...f, progress: percentage } : f
-                )
-              )
-            },
-          })
+          .upload(filePath, file)
 
         if (storageError) throw storageError
+
+        // Update progress to show upload complete
+        setUploadingFiles(prev =>
+          prev.map((f, idx) =>
+            idx === i ? { ...f, progress: 100 } : f
+          )
+        )
 
         // Save file metadata to database
         const { data: fileData, error: dbError } = await supabase
