@@ -1,0 +1,246 @@
+"use client"
+
+import React, { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ChatInterface } from '@/components/ChatInterface'
+import { FileUploader } from '@/components/FileUploader'
+import { Agent, File as AgentFile, Conversation } from '@/lib/types'
+import { createClient } from '@/lib/supabase/client'
+import { ArrowLeft, Settings, Trash2 } from 'lucide-react'
+
+export default function AgentPage() {
+  const params = useParams()
+  const agentId = params.id as string
+
+  const [agent, setAgent] = useState<Agent | null>(null)
+  const [conversation, setConversation] = useState<Conversation | null>(null)
+  const [files, setFiles] = useState<AgentFile[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    if (agentId) {
+      loadAgentData()
+    }
+  }, [agentId])
+
+  const loadAgentData = async () => {
+    try {
+      // Load agent details
+      const { data: agentData, error: agentError } = await supabase
+        .from('agents')
+        .select('*')
+        .eq('id', agentId)
+        .single()
+
+      if (agentError) throw agentError
+      setAgent(agentData)
+
+      // Load or create conversation
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        let { data: conversationData, error: convError } = await supabase
+          .from('conversations')
+          .select('*')
+          .eq('agent_id', agentId)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (convError && convError.code === 'PGRST116') {
+          // No conversation exists, create one
+          const { data: newConv, error: createError } = await supabase
+            .from('conversations')
+            .insert({
+              agent_id: agentId,
+              user_id: user.id,
+              title: `Chat with ${agentData.name}`,
+            })
+            .select()
+            .single()
+
+          if (createError) throw createError
+          conversationData = newConv
+        } else if (convError) {
+          throw convError
+        }
+
+        setConversation(conversationData)
+      }
+
+      // Load files
+      const { data: filesData, error: filesError } = await supabase
+        .from('files')
+        .select('*')
+        .eq('agent_id', agentId)
+        .order('created_at', { ascending: false })
+
+      if (filesError) throw filesError
+      setFiles(filesData || [])
+    } catch (error) {
+      console.error('Error loading agent data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleFileUploaded = (file: AgentFile) => {
+    setFiles([file, ...files])
+  }
+
+  const handleDeleteFile = async (fileId: string) => {
+    if (!confirm('Are you sure you want to delete this file?')) return
+
+    try {
+      const { error } = await supabase
+        .from('files')
+        .delete()
+        .eq('id', fileId)
+
+      if (error) throw error
+
+      setFiles(files.filter(f => f.id !== fileId))
+    } catch (error) {
+      console.error('Error deleting file:', error)
+      alert('Failed to delete file')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-500">Loading agent...</p>
+      </div>
+    )
+  }
+
+  if (!agent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500 mb-4">Agent not found</p>
+          <Link href="/spaces">
+            <Button>Back to Spaces</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Link href={`/spaces/${agent.space_id}`}>
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold">{agent.name}</h1>
+                <p className="text-sm text-gray-600">
+                  {agent.llm_provider} • {agent.llm_model}
+                </p>
+              </div>
+            </div>
+            <Button variant="outline">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Sidebar - Agent Info & Files */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Agent Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div>
+                  <p className="font-medium">Type:</p>
+                  <p className="text-gray-600">{agent.type}</p>
+                </div>
+                {agent.description && (
+                  <div>
+                    <p className="font-medium">Description:</p>
+                    <p className="text-gray-600">{agent.description}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="font-medium">Temperature:</p>
+                  <p className="text-gray-600">{agent.llm_temperature}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Max Tokens:</p>
+                  <p className="text-gray-600">{agent.llm_max_tokens}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Knowledge Base</CardTitle>
+                <CardDescription>Upload files for the agent</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FileUploader agentId={agentId} onFileUploaded={handleFileUploaded} />
+                
+                {files.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <h4 className="text-sm font-medium">Uploaded Files:</h4>
+                    {files.map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm"
+                      >
+                        <span className="truncate flex-1">{file.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleDeleteFile(file.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right - Chat Interface */}
+          <div className="lg:col-span-2">
+            {conversation ? (
+              <ChatInterface
+                agent={agent}
+                conversationId={conversation.id}
+                initialMessages={[]}
+              />
+            ) : (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <p className="text-gray-500">
+                    Please sign in to start a conversation
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
