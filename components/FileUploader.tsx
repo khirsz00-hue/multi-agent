@@ -20,8 +20,11 @@ interface UploadingFile {
 
 // Sanitize filename to remove emoji and special characters
 function sanitizeFileName(fileName: string): string {
-  // Remove emoji and special characters
-  const nameWithoutEmoji = fileName.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]/gu, '')
+  // Remove emoji - expanded regex to cover more Unicode ranges
+  const nameWithoutEmoji = fileName.replace(
+    /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{1F100}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F910}-\u{1F96B}]|[\u{1F980}-\u{1F9E0}]/gu,
+    ''
+  )
   
   // Replace spaces with underscores
   const nameWithUnderscores = nameWithoutEmoji.replace(/\s+/g, '_')
@@ -90,8 +93,8 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
       // Validate file size
       if (file.size > MAX_FILE_SIZE) {
         setUploadingFiles(prev =>
-          prev.map((f, idx) =>
-            idx === i
+          prev.map((f) =>
+            f.file.name === file.name && f.file.size === file.size
               ? { ...f, error: 'File too large (max 10MB)', progress: 0 }
               : f
           )
@@ -108,8 +111,10 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
         
         // Update progress to show upload starting
         setUploadingFiles(prev =>
-          prev.map((f, idx) =>
-            idx === i ? { ...f, progress: 50 } : f
+          prev.map((f) =>
+            f.file.name === file.name && f.file.size === file.size && !f.error
+              ? { ...f, progress: 50 }
+              : f
           )
         )
         
@@ -121,8 +126,10 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
 
         // Update progress to show upload complete
         setUploadingFiles(prev =>
-          prev.map((f, idx) =>
-            idx === i ? { ...f, progress: 100 } : f
+          prev.map((f) =>
+            f.file.name === file.name && f.file.size === file.size && !f.error
+              ? { ...f, progress: 100 }
+              : f
           )
         )
 
@@ -142,7 +149,9 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
         if (dbError) throw dbError
 
         // Remove from uploading list
-        setUploadingFiles(prev => prev.filter((_, idx) => idx !== i))
+        setUploadingFiles(prev => 
+          prev.filter((f) => !(f.file.name === file.name && f.file.size === file.size))
+        )
 
         // Call callback
         if (onFileUploaded) {
@@ -173,8 +182,8 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
         
         // Update UI with error
         setUploadingFiles(prev =>
-          prev.map((f, idx) =>
-            idx === i
+          prev.map((f) =>
+            f.file.name === file.name && f.file.size === file.size
               ? { ...f, error: errorMessage, progress: 0 }
               : f
           )
