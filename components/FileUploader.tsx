@@ -16,12 +16,38 @@ interface UploadingFile {
   file: File
   progress: number
   error?: string
+  id: string // Unique identifier for tracking
+}
+
+// Emoji Unicode ranges to remove from filenames
+const EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{1F100}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F910}-\u{1F96B}]|[\u{1F980}-\u{1F9E0}]/gu
+
+// Sanitize filename to remove emoji and special characters
+function sanitizeFileName(fileName: string): string {
+  // Remove emoji using expanded Unicode ranges
+  const nameWithoutEmoji = fileName.replace(EMOJI_REGEX, '')
+  
+  // Replace spaces with underscores
+  const nameWithUnderscores = nameWithoutEmoji.replace(/\s+/g, '_')
+  
+  // Remove any remaining special characters except dots, dashes, underscores
+  const cleanName = nameWithUnderscores.replace(/[^a-zA-Z0-9._-]/g, '')
+  
+  // Ensure the name isn't empty
+  if (!cleanName || cleanName === '.') {
+    return `file_${Date.now()}.bin`
+  }
+  
+  return cleanName
 }
 
 export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([])
   const [dragActive, setDragActive] = useState(false)
   const supabase = createClient()
+  
+  // Maximum file size: 10MB
+  const MAX_FILE_SIZE = 10 * 1024 * 1024
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -51,19 +77,50 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
   }, [])
 
   const handleFiles = async (files: File[]) => {
-    const newUploadingFiles = files.map(file => ({ file, progress: 0 }))
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      alert('Please sign in to upload files')
+      return
+    }
+
+    const newUploadingFiles = files.map(file => ({ 
+      file, 
+      progress: 0,
+      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`
+    }))
     setUploadingFiles(prev => [...prev, ...newUploadingFiles])
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
+      const uploadId = newUploadingFiles[i].id
+      
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        setUploadingFiles(prev =>
+          prev.map((f) =>
+            f.id === uploadId
+              ? { ...f, error: 'File too large (max 10MB)', progress: 0 }
+              : f
+          )
+        )
+        continue
+      }
+      
       try {
-        // Upload to Supabase Storage
-        const filePath = `${agentId}/${Date.now()}_${file.name}`
+        // Sanitize filename
+        const sanitizedFileName = sanitizeFileName(file.name)
+        
+        // Use userId in path to match RLS policies
+        const filePath = `${user.id}/${agentId}/${Date.now()}_${sanitizedFileName}`
         
         // Update progress to show upload starting
         setUploadingFiles(prev =>
-          prev.map((f, idx) =>
-            idx === i ? { ...f, progress: 50 } : f
+          prev.map((f) =>
+            f.id === uploadId
+              ? { ...f, progress: 50 }
+              : f
           )
         )
         
@@ -75,8 +132,10 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
 
         // Update progress to show upload complete
         setUploadingFiles(prev =>
-          prev.map((f, idx) =>
-            idx === i ? { ...f, progress: 100 } : f
+          prev.map((f) =>
+            f.id === uploadId
+              ? { ...f, progress: 100 }
+              : f
           )
         )
 
@@ -96,7 +155,9 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
         if (dbError) throw dbError
 
         // Remove from uploading list
-        setUploadingFiles(prev => prev.filter((_, idx) => idx !== i))
+        setUploadingFiles(prev => 
+          prev.filter((f) => f.id !== uploadId)
+        )
 
         // Call callback
         if (onFileUploaded) {
@@ -109,12 +170,27 @@ export function FileUploader({ agentId, onFileUploaded }: FileUploaderProps) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileId: fileData.id }),
         })
-      } catch (error) {
+      } catch (error: any) {
         console.error('Upload error:', error)
+        
+        // Provide detailed error messages
+        let errorMessage = 'Failed to upload file'
+        
+        if (error.message?.includes('Invalid key')) {
+          errorMessage = 'Invalid file name. Please use only letters, numbers, and basic punctuation.'
+        } else if (error.message?.includes('row-level security')) {
+          errorMessage = 'Permission denied. Please make sure you are logged in.'
+        } else if (error.message?.includes('not found')) {
+          errorMessage = 'Storage bucket not configured. Please contact support.'
+        } else if (error.message) {
+          errorMessage = error.message
+        }
+        
+        // Update UI with error
         setUploadingFiles(prev =>
-          prev.map((f, idx) =>
-            idx === i
-              ? { ...f, error: error instanceof Error ? error.message : 'Upload failed' }
+          prev.map((f) =>
+            f.id === uploadId
+              ? { ...f, error: errorMessage, progress: 0 }
               : f
           )
         )

@@ -235,9 +235,63 @@ export const AGENT_TYPES = [
 ### Supabase Production Setup
 
 1. **Database**: Already set up with migrations
-2. **Storage**: Create `agent-files` bucket in Supabase Storage
+2. **Storage**: Create `agent-files` bucket in Supabase Storage (see Storage Configuration below)
 3. **Auth**: Configure authentication providers in Supabase Auth settings
 4. **Edge Functions**: Already deployed via CLI
+
+## 🗄️ Storage Configuration
+
+### Create Storage Bucket
+
+1. Go to Supabase Dashboard → Storage
+2. Click "Create a new bucket"
+3. Name: `agent-files`
+4. Public: **NO** (keep private)
+5. Click "Create bucket"
+
+### Set Up Storage Policies
+
+Run these SQL queries in Supabase SQL Editor:
+
+```sql
+-- Allow authenticated users to upload files to their own folder
+CREATE POLICY "Authenticated users can upload files"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'agent-files' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- Allow users to view their own files
+CREATE POLICY "Users can view their own files"
+ON storage.objects FOR SELECT TO authenticated
+USING (
+  bucket_id = 'agent-files' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- Allow users to delete their own files
+CREATE POLICY "Users can delete their own files"
+ON storage.objects FOR DELETE TO authenticated
+USING (
+  bucket_id = 'agent-files' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+```
+
+### Update Database RLS Policies
+
+The initial migration includes RLS policies for the files table. For improved compatibility with the storage path structure (`userId/agentId/filename`), you can optionally simplify the INSERT policy:
+
+```sql
+-- Simplified INSERT policy for files table (optional)
+DROP POLICY IF EXISTS "Users can create files in their agents" ON files;
+CREATE POLICY "Authenticated users can insert files"
+ON files FOR INSERT TO authenticated
+WITH CHECK (auth.uid() IS NOT NULL);
+```
+
+**Note:** The storage path structure is `{userId}/{agentId}/{timestamp}_{sanitized_filename}` to ensure proper RLS policy matching.
 
 ## 🔒 Security
 
