@@ -2,11 +2,31 @@
 // Note: To enable email notifications, install resend: npm install resend
 // The system works without it, logging to console instead
 
+interface ContentItem {
+  id: string
+  title: string
+  content: string
+  content_type: string
+  publish_date: string
+  audience_insights?: {
+    pain_point: string
+  }
+}
+
+interface KPIProgress {
+  name: string
+  current: number
+  target: number
+  unit: string
+  percentage: number
+  daysLeft: number
+}
+
 interface DailyReminderData {
   userEmail: string
-  todayContent: any
-  kpiProgress: any
-  tomorrowContent?: any
+  todayContent: ContentItem | null
+  kpiProgress: KPIProgress | null
+  tomorrowContent?: ContentItem | null
 }
 
 export async function sendDailyReminder(data: DailyReminderData) {

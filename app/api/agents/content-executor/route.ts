@@ -150,16 +150,24 @@ async function getStats(agentId: string, supabase: any) {
   
   let streak = 0
   if (recentPublished && recentPublished.length > 0) {
-    const today = new Date()
-    for (let i = 0; i < recentPublished.length; i++) {
-      const publishDate = new Date(recentPublished[i].publish_date)
-      const daysDiff = Math.floor((today.getTime() - publishDate.getTime()) / (1000 * 60 * 60 * 24))
-      
-      if (daysDiff === i) {
-        streak++
-      } else {
-        break
-      }
+    // Convert dates to YYYY-MM-DD format for comparison
+    const todayStr = new Date().toISOString().split('T')[0]
+    const todayDate = new Date(todayStr)
+    
+    let checkDate = new Date(todayDate)
+    const publishedDates = new Set(
+      recentPublished.map((p: any) => new Date(p.publish_date).toISOString().split('T')[0])
+    )
+    
+    // Check for consecutive days starting from today or yesterday
+    // (streak continues if we published yesterday but not yet today)
+    if (!publishedDates.has(todayStr)) {
+      checkDate.setDate(checkDate.getDate() - 1)
+    }
+    
+    while (publishedDates.has(checkDate.toISOString().split('T')[0])) {
+      streak++
+      checkDate.setDate(checkDate.getDate() - 1)
     }
   }
   
