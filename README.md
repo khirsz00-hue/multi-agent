@@ -445,12 +445,165 @@ Example output structure:
 }
 ```
 
+### Audience Insights Agent
+
+The Audience Insights agent analyzes social media content (Notion posts, Facebook posts) to extract pain points from your target audience.
+
+#### Features
+- **Notion Integration**: Automatically analyze posts from Notion database
+- **Pain Point Extraction**: AI-powered analysis to identify audience problems
+- **Categorization**: Automatic categorization (focus, time_management, organization, motivation, overwhelm)
+- **Sentiment Analysis**: Detect emotional state (frustrated, confused, seeking_help, desperate)
+- **Frequency Tracking**: Track how often each pain point is mentioned
+- **Inter-Agent Communication**: Share insights with Marketing Strategist via outputs table
+
+#### Setup
+
+1. **Configure Notion Integration**
+   ```bash
+   # Add to .env.local or Vercel environment variables
+   NOTION_API_KEY=secret_xxxxx
+   NOTION_DATABASE_ID=your_database_id
+   ```
+
+2. **Create Audience Insights Agent**
+   - In your space, create a new agent
+   - Set the role to `audience_insights`
+   - Configure LLM settings (recommend GPT-4-turbo for best analysis)
+
+3. **Analyze Notion Posts**
+   ```typescript
+   // POST /api/agents/audience-insights
+   {
+     "agentId": "your-agent-id",
+     "action": "analyze_notion_posts",
+     "data": {
+       "notionDatabaseId": "optional-override"
+     }
+   }
+   ```
+
+4. **Get Top Pain Points**
+   ```typescript
+   // POST /api/agents/audience-insights
+   {
+     "agentId": "your-agent-id",
+     "action": "get_top_pain_points"
+   }
+   ```
+
+#### UI Component
+
+```tsx
+import AudienceInsights from '@/components/agents/AudienceInsights'
+
+// In your component
+<AudienceInsights agentId={agentId} />
+```
+
+#### Notion Database Structure
+
+Your Notion database should have these columns:
+- **Treść** (rich_text): Post content
+- **Komentarze** (rich_text): Comments on the post
+
+### Marketing Strategist Agent
+
+The Marketing Strategist agent generates flexible monthly content calendars based on audience pain points and business KPIs.
+
+#### Key Features
+- **Monthly Content Generation**: Creates 12 posts per month (not rigid 52-week calendar)
+- **Pain Point Alignment**: Each post addresses specific audience problems
+- **KPI Integration**: Aligns content with business goals from Strategic Planner
+- **Flexible Editing**: Full inline editing of generated content
+- **Regeneration**: AI-powered post regeneration with feedback
+- **Status Workflow**: Draft → Approved → Published → Skipped
+- **Narrative Phases**: Automatic sequencing (awareness → education → trust → conversion)
+
+#### Usage
+
+1. **Create Marketing Strategist Agent**
+   - In your space, create a new agent
+   - Set the role to `marketing_strategist`
+   - Configure `reads_from` to include Strategic Planner and Audience Insights agents
+
+2. **Generate Monthly Content**
+   ```typescript
+   // POST /api/agents/marketing-strategist
+   {
+     "agentId": "your-agent-id",
+     "action": "generate_monthly_content",
+     "data": {
+       "month": "2026-11",
+       "postsPerWeek": 3,
+       "contentTypes": ["linkedin_post"]
+     }
+   }
+   ```
+
+3. **Edit Content**
+   - Posts are generated in "draft" status
+   - Edit inline in the UI or via API
+   - Changes are tracked in metadata
+
+4. **Regenerate Post**
+   ```typescript
+   // POST /api/agents/marketing-strategist
+   {
+     "agentId": "your-agent-id",
+     "action": "regenerate_post",
+     "data": {
+       "postId": "post-id",
+       "reason": "Make it more engaging"
+     }
+   }
+   ```
+
+5. **Get Month Content**
+   ```typescript
+   // POST /api/agents/marketing-strategist
+   {
+     "agentId": "your-agent-id",
+     "action": "get_month_content",
+     "data": {
+       "month": "2026-11"
+     }
+   }
+   ```
+
+#### UI Component
+
+```tsx
+import ContentCalendar from '@/components/agents/ContentCalendar'
+
+// In your component
+<ContentCalendar agentId={agentId} />
+```
+
+#### Monthly Workflow
+
+1. **Audience Insights** analyzes social posts → extracts pain points
+2. **Strategic Planner** defines business KPIs and goals
+3. **Marketing Strategist** reads both outputs → generates monthly content (12 posts)
+4. Review, edit, or regenerate posts as needed
+5. Approve posts and update status
+6. Repeat for next month
+
+#### Content Structure
+
+Each post includes:
+- **Title**: 5-7 word headline
+- **Content**: Full post text with emojis (max 250 words)
+- **Structure**: Hook → Problem → Solution → CTA
+- **Metadata**: Version, edit history, regeneration tracking
+- **Links**: Connected to pain point and KPI
+
 ## 🎯 Roadmap
 
 - [x] Multi-agent foundation with specialized roles
 - [x] Strategic Planner agent with KPI tracking
-- [ ] Audience Insights agent implementation
-- [ ] Marketing Strategist agent implementation
+- [x] Audience Insights agent implementation
+- [x] Marketing Strategist agent implementation
 - [ ] Content Executor agent implementation
 - [ ] Multi-user collaboration in spaces
 - [ ] Advanced file processing (PDFs, images, code)
