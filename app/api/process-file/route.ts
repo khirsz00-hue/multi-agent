@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { chunkText } from '@/lib/file-processor'
+import OpenAI from 'openai'
 
 export async function POST(request: Request) {
   try {
@@ -62,19 +63,41 @@ export async function POST(request: Request) {
     // Chunk the text
     const chunks = chunkText(processedText, 1000, 200) // 1000 chars, 200 overlap
 
-    // Generate embeddings (optional - for semantic search)
-    // const embeddings = await generateEmbeddings(chunks)
+    // Generate embeddings for semantic search
+    let embeddings: number[][] | null = null
+
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+        const embeddingResponse = await openai.embeddings.create({
+          model: 'text-embedding-3-small',
+          input: chunks
+        })
+
+        embeddings = embeddingResponse.data.map((item) => item.embedding as number[])
+      } catch (embeddingError) {
+        console.error('Failed to generate embeddings:', embeddingError)
+      }
+    }
 
     // Save chunks to database
-    const chunksToInsert = chunks.map((chunk, index) => ({
-      file_id: fileId,
-      content: chunk,
-      chunk_index: index,
-      metadata: {
-        file_name: file.name,
-        file_type: file.file_type
+    const chunksToInsert = chunks.map((chunk, index) => {
+      const chunkRecord: any = {
+        file_id: fileId,
+        content: chunk,
+        chunk_index: index,
+        metadata: {
+          file_name: file.name,
+          file_type: file.file_type
+        }
       }
-    }))
+
+      if (embeddings?.[index]) {
+        chunkRecord.embedding = embeddings[index]
+      }
+
+      return chunkRecord
+    })
 
     const { error: chunksError } = await supabase
       .from('file_chunks')

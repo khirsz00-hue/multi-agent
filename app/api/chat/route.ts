@@ -73,6 +73,11 @@ export async function POST(request: Request) {
         role: 'system',
         content: `Relevant information from uploaded files:\n\n${context.join('\n\n')}`
       })
+    } else {
+      messages.push({
+        role: 'system',
+        content: 'No relevant knowledge base content was found. If the question depends on uploaded documents, say that the information is not available in the knowledge base and avoid guessing.'
+      })
     }
 
     // Get conversation history
@@ -167,7 +172,7 @@ async function getRelevantContext(
     // Get file chunks for these files
     const { data: chunks } = await supabase
       .from('file_chunks')
-      .select('content')
+      .select('content, embedding')
       .in('file_id', fileIds)
       .order('chunk_index', { ascending: true })
 
@@ -175,8 +180,39 @@ async function getRelevantContext(
       return []
     }
 
-    // Simple keyword-based search for now
-    // TODO: Implement proper vector similarity search with embeddings
+    // Try semantic search if embeddings are available
+    const chunksWithEmbeddings = chunks.filter(
+      (chunk: any) => Array.isArray(chunk.embedding) && chunk.embedding.length > 0
+    )
+
+    if (chunksWithEmbeddings.length > 0 && process.env.OPENAI_API_KEY) {
+      try {
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+        const embeddingResponse = await openai.embeddings.create({
+          model: 'text-embedding-3-small',
+          input: query
+        })
+
+        const queryEmbedding = embeddingResponse.data[0].embedding as number[]
+
+        const rankedContexts = chunksWithEmbeddings
+          .map((chunk: any) => ({
+            content: chunk.content,
+            score: cosineSimilarity(queryEmbedding, chunk.embedding as number[])
+          }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3)
+          .map((item) => item.content)
+
+        if (rankedContexts.length > 0) {
+          return rankedContexts
+        }
+      } catch (embeddingError) {
+        console.error('Semantic search failed:', embeddingError)
+      }
+    }
+
+    // Fallback: simple keyword-based search
     const contexts: string[] = []
     const queryLower = query.toLowerCase()
 
@@ -187,12 +223,35 @@ async function getRelevantContext(
       }
     }
 
+    if (contexts.length === 0) {
+      return chunks.slice(0, 3).map((chunk: any) => chunk.content)
+    }
+
     return contexts
 
   } catch (error) {
     console.error('Error getting context:', error)
     return []
   }
+}
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  const length = Math.min(a.length, b.length)
+  let dotProduct = 0
+  let normA = 0
+  let normB = 0
+
+  for (let i = 0; i < length; i++) {
+    dotProduct += a[i] * b[i]
+    normA += a[i] * a[i]
+    normB += b[i] * b[i]
+  }
+
+  if (normA === 0 || normB === 0) {
+    return 0
+  }
+
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB))
 }
 
 // LLM Provider implementations
