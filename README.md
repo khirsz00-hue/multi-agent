@@ -702,14 +702,23 @@ import MultiAgentDashboard from '@/components/dashboard/MultiAgentDashboard'
 
 ### Email Notifications
 
-Daily reminders sent at 8 AM with:
+Daily reminders can be sent at 8 AM with:
 - Full content ready to copy
 - KPI progress update
 - Quick action buttons
 
-#### Setup
+**Note:** Email notifications are optional. The system logs to console by default.
 
-1. **Configure Resend API Key**
+#### Setup (Optional)
+
+To enable actual email sending:
+
+1. **Install Resend**
+   ```bash
+   npm install resend
+   ```
+
+2. **Configure API Keys**
    ```bash
    # Add to .env.local or Vercel environment variables
    RESEND_API_KEY=your_resend_api_key
@@ -717,10 +726,17 @@ Daily reminders sent at 8 AM with:
    NEXT_PUBLIC_APP_URL=https://yourapp.vercel.app
    ```
 
-2. **Deploy to Vercel**
+3. **Uncomment Email Code**
+   - Edit `lib/email-notifications.ts`
+   - Uncomment the resend email sending code
+   - Customize email template as needed
+
+4. **Deploy to Vercel**
    - Vercel Cron automatically reads `vercel.json`
    - Cron job runs daily at 8 AM
    - Sends emails to users with content ready
+
+Without these steps, the system will log email content to the console.
 
 ### Daily Workflow
 

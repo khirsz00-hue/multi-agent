@@ -1,4 +1,6 @@
 // Email notification system using Resend (or any email provider)
+// Note: To enable email notifications, install resend: npm install resend
+// The system works without it, logging to console instead
 
 interface DailyReminderData {
   userEmail: string
@@ -8,9 +10,23 @@ interface DailyReminderData {
 }
 
 export async function sendDailyReminder(data: DailyReminderData) {
-  // If using Resend
+  // Email notifications are optional and require the resend package
+  // If RESEND_API_KEY is set but resend is not installed, emails will be logged to console
+  console.log('Daily reminder:', {
+    to: data.userEmail,
+    subject: '📅 Today\'s Content Ready!',
+    hasContent: !!data.todayContent,
+    hasKPI: !!data.kpiProgress
+  })
+  
+  // To enable actual email sending:
+  // 1. Install resend: npm install resend
+  // 2. Set RESEND_API_KEY environment variable
+  // 3. Uncomment and modify the code below
+  
+  /*
   if (process.env.RESEND_API_KEY) {
-    const { Resend } = require('resend')
+    const { Resend } = await import('resend')
     const resend = new Resend(process.env.RESEND_API_KEY)
     
     await resend.emails.send({
@@ -19,10 +35,8 @@ export async function sendDailyReminder(data: DailyReminderData) {
       subject: '📅 Today\'s Content Ready!',
       html: generateEmailHTML(data)
     })
-  } else {
-    // Fallback: log to console (for development)
-    console.log('Daily reminder email:', data)
   }
+  */
 }
 
 function generateEmailHTML(data: DailyReminderData): string {

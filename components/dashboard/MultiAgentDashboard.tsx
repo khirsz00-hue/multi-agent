@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,11 +24,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
   
   const supabase = createClient()
 
-  useEffect(() => {
-    loadDashboard()
-  }, [spaceId])
-
-  async function loadDashboard() {
+  const loadDashboard = useCallback(async () => {
     setLoading(true)
     
     try {
@@ -117,7 +113,11 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
     } finally {
       setLoading(false)
     }
-  }
+  }, [spaceId, supabase])
+
+  useEffect(() => {
+    loadDashboard()
+  }, [loadDashboard])
 
   async function handleCopyContent() {
     if (todayContent?.content) {
@@ -199,7 +199,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-primary" />
-              Today's Content
+              Today&apos;s Content
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

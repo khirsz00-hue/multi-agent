@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: Request) {
   try {
     const { agentId, action, data } = await request.json()
@@ -135,8 +137,8 @@ async function getStats(agentId: string, supabase: any) {
     .eq('month_group', thisMonth)
   
   const total = monthContent?.length || 0
-  const published = monthContent?.filter(c => c.status === 'published').length || 0
-  const draft = monthContent?.filter(c => c.status === 'draft').length || 0
+  const published = monthContent?.filter((c: any) => c.status === 'published').length || 0
+  const draft = monthContent?.filter((c: any) => c.status === 'draft').length || 0
   
   // Get streak (consecutive days published)
   const { data: recentPublished } = await supabase

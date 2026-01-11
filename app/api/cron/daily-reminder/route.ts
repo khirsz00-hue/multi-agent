@@ -5,6 +5,8 @@ import { sendDailyReminder } from '@/lib/email-notifications'
 // This endpoint should be called by a cron job (e.g., Vercel Cron)
 // Run daily at 8 AM
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     // Verify cron secret
