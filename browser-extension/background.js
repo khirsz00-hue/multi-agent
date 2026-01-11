@@ -38,8 +38,8 @@ async function saveToNotion(postData) {
     chrome.notifications.create({
       type: 'basic',
       iconUrl: 'icon48.png',
-      title: 'Zapisano do Notion',
-      message: postData.title || 'Post został zapisany',
+      title: 'Saved to Notion',
+      message: postData.title || 'Post saved successfully',
       priority: 1
     })
     

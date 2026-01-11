@@ -10,4 +10,9 @@ export function getNotionClient() {
   })
 }
 
-export const NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID || '2e4d8e44d9158097bdd1d96c89f3fcf3'
+export function getNotionDatabaseId() {
+  if (!process.env.NOTION_DATABASE_ID) {
+    throw new Error('NOTION_DATABASE_ID is not set')
+  }
+  return process.env.NOTION_DATABASE_ID
+}

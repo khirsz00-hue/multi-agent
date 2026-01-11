@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Client } from '@notionhq/client'
+import { getNotionClient, getNotionDatabaseId } from '@/lib/notion'
 
 export async function POST(request: Request) {
   try {
@@ -11,17 +11,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
     
-    // Initialize Notion client
-    const notion = new Client({
-      auth: process.env.NOTION_API_KEY,
-    })
-    
-    const databaseId = process.env.NOTION_DATABASE_ID || '2e4d8e44d9158097bdd1d96c89f3fcf3'
+    // Initialize Notion client using helper
+    const notion = getNotionClient()
+    const databaseId = getNotionDatabaseId()
     
     // Format comments
     const formattedComments = comments && comments.length > 0
       ? comments.map((c: string) => `• ${c}`).join('\n')
-      : 'Brak komentarzy'
+      : 'No comments'
     
     // Create page in Notion
     const response = await notion.pages.create({

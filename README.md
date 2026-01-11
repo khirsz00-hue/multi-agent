@@ -375,7 +375,7 @@ For support, email support@yourdomain.com or join our Discord community.
 3. Copy the Internal Integration Token
 4. Add to Vercel environment variables:
    - `NOTION_API_KEY=secret_xxxxx`
-   - `NOTION_DATABASE_ID=2e4d8e44d9158097bdd1d96c89f3fcf3`
+   - `NOTION_DATABASE_ID=your_notion_database_id`
 5. In your Notion database → Share → Add integration
 
 #### 5. Usage

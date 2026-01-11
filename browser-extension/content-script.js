@@ -8,6 +8,7 @@ document.addEventListener('click', async (event) => {
   
   // Check if clicked element is a "Save" button
   // Facebook uses various selectors, we need to check multiple patterns
+  // Support both English and Polish labels
   const isSaveButton = 
     target.getAttribute('aria-label')?.includes('Save') ||
     target.getAttribute('aria-label')?.includes('Zapisz') ||
@@ -37,16 +38,16 @@ document.addEventListener('click', async (event) => {
           data: postData
         }, (response) => {
           if (response?.success) {
-            showNotification('✅ Zapisano do Notion!')
+            showNotification('✅ Saved to Notion!')
           } else {
-            showNotification('❌ Błąd: ' + (response?.error || 'Unknown error'))
+            showNotification('❌ Error: ' + (response?.error || 'Unknown error'))
           }
         })
       }
       
     } catch (error) {
       console.error('Error extracting post:', error)
-      showNotification('❌ Nie udało się wyodrębnić posta')
+      showNotification('❌ Failed to extract post')
     }
   }
 }, true) // Use capture phase to catch events early
