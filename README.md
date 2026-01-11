@@ -16,7 +16,7 @@ A comprehensive AI-powered platform for creating and managing intelligent agents
 
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
 - **UI Components**: Shadcn/ui with Radix UI primitives
-- **Backend**: Supabase (PostgreSQL, Storage, Auth, Edge Functions)
+- **Backend**: Supabase (PostgreSQL, Storage, Auth) + Next.js API Routes
 - **Vector Database**: pgvector extension in PostgreSQL
 - **AI Providers**: 
   - OpenAI (GPT-4, GPT-3.5-turbo)
@@ -40,8 +40,10 @@ A comprehensive AI-powered platform for creating and managing intelligent agents
 │   │   └── [id]/
 │   │       └── page.tsx       # Agent chat interface
 │   └── api/
-│       ├── chat/              # Chat API route
-│       └── process-file/      # File processing API route
+│       ├── chat/
+│       │   └── route.ts       # Chat API route with LLM integration
+│       └── process-file/
+│           └── route.ts       # File processing API route
 ├── components/
 │   ├── ui/                    # Shadcn/ui base components
 │   ├── AgentBuilder.tsx       # Agent creation/editing form
@@ -53,16 +55,16 @@ A comprehensive AI-powered platform for creating and managing intelligent agents
 │   └── SpaceList.tsx          # Spaces grid
 ├── lib/
 │   ├── supabase/
-│   │   ├── client.ts         # Browser Supabase client
-│   │   └── server.ts         # Server Supabase client
-│   ├── types.ts              # TypeScript types
-│   └── utils.ts              # Utility functions
+│   │   ├── client.ts          # Browser Supabase client
+│   │   └── server.ts          # Server Supabase client
+│   ├── file-processor.ts      # File chunking utilities
+│   ├── types.ts               # TypeScript types
+│   └── utils.ts               # Utility functions
 ├── supabase/
-│   ├── migrations/
-│   │   └── 00001_initial_schema.sql  # Database schema
-│   └── functions/
-│       ├── chat-with-agent/   # Chat Edge Function
-│       └── process-file/      # File processing Edge Function
+│   └── migrations/
+│       ├── 00001_initial_schema.sql        # Database schema
+│       ├── 00002_update_files_rls_policies.sql
+│       └── 00003_add_metadata_to_file_chunks.sql
 ├── .env.local.example         # Environment variables template
 ├── next.config.js             # Next.js configuration
 ├── tailwind.config.ts         # Tailwind CSS configuration
@@ -114,40 +116,18 @@ A comprehensive AI-powered platform for creating and managing intelligent agents
    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
    
    # LLM API Keys
-   OPENAI_API_KEY=your_openai_key
-   ANTHROPIC_API_KEY=your_anthropic_key
-   GOOGLE_AI_API_KEY=your_google_key
+   OPENAI_API_KEY=sk-...
+   ANTHROPIC_API_KEY=sk-ant-...
+   GOOGLE_AI_API_KEY=...
    OLLAMA_ENDPOINT=http://localhost:11434
    ```
 
-6. **Deploy Edge Functions**
-   ```bash
-   # Install Supabase CLI
-   npm install -g supabase
-   
-   # Login to Supabase
-   supabase login
-   
-   # Link your project
-   supabase link --project-ref your-project-ref
-   
-   # Deploy functions
-   supabase functions deploy chat-with-agent
-   supabase functions deploy process-file
-   
-   # Set secrets for Edge Functions
-   supabase secrets set OPENAI_API_KEY=your_key
-   supabase secrets set ANTHROPIC_API_KEY=your_key
-   supabase secrets set GOOGLE_AI_API_KEY=your_key
-   supabase secrets set OLLAMA_ENDPOINT=your_endpoint
-   ```
-
-7. **Run the development server**
+6. **Run the development server**
    ```bash
    npm run dev
    ```
 
-8. **Open your browser**
+7. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 📖 Usage
@@ -181,6 +161,39 @@ A comprehensive AI-powered platform for creating and managing intelligent agents
    - Configured LLM
    - System instructions
    - Relevant file context (RAG)
+
+## 🤖 LLM Configuration
+
+The platform supports multiple LLM providers through Next.js API Routes:
+- **OpenAI** (GPT-4, GPT-3.5)
+- **Anthropic** (Claude)
+- **Google AI** (Gemini)
+- **Ollama** (Local models)
+
+### Setup API Keys
+
+Add your API keys to environment variables (`.env.local` for development, or Vercel environment variables for production):
+
+```bash
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_AI_API_KEY=...
+```
+
+For Ollama (local):
+```bash
+OLLAMA_ENDPOINT=http://localhost:11434
+```
+
+## 💬 Chat & RAG
+
+The chat system uses:
+- **Conversation history**: Last 10 messages
+- **RAG (Retrieval Augmented Generation)**: Searches uploaded files for relevant context
+- **File chunking**: Automatically chunks large files (1000 chars with 200 char overlap) for efficient retrieval
+- **Multiple LLM providers**: Switch between OpenAI, Claude, Gemini, Ollama
+
+Files are automatically processed after upload and chunked for semantic search.
 
 ## 🔧 Configuration
 
@@ -225,7 +238,14 @@ export const AGENT_TYPES = [
    - Go to [vercel.com](https://vercel.com)
    - Click "New Project"
    - Import your GitHub repository
-   - Add environment variables from `.env.local`
+   - Add environment variables from `.env.local`:
+     - `NEXT_PUBLIC_SUPABASE_URL`
+     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+     - `SUPABASE_SERVICE_ROLE_KEY`
+     - `OPENAI_API_KEY` (optional, if using OpenAI)
+     - `ANTHROPIC_API_KEY` (optional, if using Anthropic)
+     - `GOOGLE_AI_API_KEY` (optional, if using Google)
+     - `OLLAMA_ENDPOINT` (optional, if using Ollama)
    - Deploy!
 
 3. **Configure domains**
@@ -237,7 +257,6 @@ export const AGENT_TYPES = [
 1. **Database**: Already set up with migrations
 2. **Storage**: Create `agent-files` bucket in Supabase Storage (see Storage Configuration below)
 3. **Auth**: Configure authentication providers in Supabase Auth settings
-4. **Edge Functions**: Already deployed via CLI
 
 ## 🗄️ Storage Configuration
 
