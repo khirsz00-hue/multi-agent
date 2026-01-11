@@ -1,10 +1,13 @@
 // Load saved settings
-chrome.storage.sync.get(['notionApiKey', 'notionDatabaseId'], (result) => {
+chrome.storage.sync.get(['notionApiKey', 'notionDatabaseId', 'maxComments'], (result) => {
   if (result.notionApiKey) {
     document.getElementById('notionApiKey').value = result.notionApiKey;
   }
   if (result.notionDatabaseId) {
     document.getElementById('notionDatabaseId').value = result.notionDatabaseId;
+  }
+  if (result.maxComments !== undefined) {
+    document.getElementById('maxComments').value = result.maxComments;
   }
 });
 
@@ -12,10 +15,12 @@ chrome.storage.sync.get(['notionApiKey', 'notionDatabaseId'], (result) => {
 document.getElementById('save').addEventListener('click', () => {
   const notionApiKey = document.getElementById('notionApiKey').value;
   const notionDatabaseId = document.getElementById('notionDatabaseId').value;
+  const maxComments = parseInt(document.getElementById('maxComments').value);
   
   chrome.storage.sync.set({
     notionApiKey,
-    notionDatabaseId
+    notionDatabaseId,
+    maxComments
   }, () => {
     const status = document.getElementById('status');
     status.textContent = 'Settings saved successfully!';

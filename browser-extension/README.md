@@ -10,6 +10,10 @@ Chrome/Firefox extension that saves Facebook posts directly to Notion with a cus
 - 📱 **SPA Support**: Handles Facebook's single-page app navigation
 - ✅ **Visual Feedback**: Loading, success, and error states
 - 🔐 **Direct Integration**: Saves directly to Notion API (no intermediary)
+- 🧠 **Smart Post Detection**: Separates main post from comments
+- 💬 **Comment Extraction**: Extracts comments with engagement metrics
+- 📊 **Engagement Sorting**: Sorts comments by likes and replies
+- ⚙️ **Configurable**: Choose how many top comments to save
 
 ## Installation
 
@@ -46,22 +50,48 @@ Chrome/Firefox extension that saves Facebook posts directly to Notion with a cus
 
 ### 4. Set Up Database
 Your Notion database should have these properties:
-- **Treść** (title) - Post content preview
-- **Source** (text) - Set to "Facebook"
-- **Author** (text) - Post author
-- **URL** (url) - Facebook post URL
-- **Saved At** (date) - When saved
+
+| Property Name    | Type      | Description                        |
+|------------------|-----------|-------------------------------------|
+| Treść Posta      | Title     | Main post text (first 100 chars)   |
+| Source           | Text      | "Facebook"                         |
+| Author           | Text      | Post author name                   |
+| URL              | URL       | Link to Facebook post              |
+| Comments Count   | Number    | Total number of comments           |
+| Top Engagement   | Number    | Engagement score of top comment    |
+| Saved At         | Date      | When the post was saved            |
+
+**Page Content:**
+- Full main post text (all content)
+- Top N comments sorted by engagement (likes × 2 + replies × 1)
+- Each comment shows: author, likes, replies
+
+**Note**: The extension now separates the main post from comments and saves them in structured sections.
 
 ## Usage
 
 1. Browse Facebook (feed, groups, or profiles)
 2. Look for the **"💾 Save to Notion"** button in the bottom-right corner
-3. Click it to save the current post
+3. Click it to save the current post with its top comments
 4. Watch the button change:
    - ⏳ Extracting... (processing)
    - ✅ Saved! (success)
    - ❌ Error (if something went wrong)
-5. Check your Notion database - the post should appear!
+5. Check your Notion database - the post should appear with:
+   - Main post text in the title and content
+   - Top comments sorted by engagement in a separate section
+   - Engagement metrics (likes, replies) for each comment
+
+## How It Works
+
+1. **Main Post Detection**: Identifies the actual post (not comments) by checking:
+   - Not inside a comment section
+   - Has substantial content (>100 characters)
+   - Has post header with author and timestamp
+   - Is near the top of the page
+2. **Comment Extraction**: Collects all comments with engagement metrics (likes, replies)
+3. **Smart Sorting**: Sorts comments by engagement score (likes × 2 + replies × 1)
+4. **Structured Save**: Saves main post and top comments in separate, formatted sections
 
 ## Supported Facebook Pages
 
@@ -84,7 +114,23 @@ Your Notion database should have these properties:
 ### "Notion API error"
 - Check that your integration has access to the database
 - In Notion, click "..." on your database → "Add connections" → Select your integration
-- Verify property names match (especially "Treść" for title)
+- Verify property names match exactly:
+  - **Treść Posta** (title) - Main post content
+  - **Source** (text) - Should be "Facebook"
+  - **Author** (text) - Post author name
+  - **URL** (url) - Facebook post link
+  - **Comments Count** (number) - Total comments
+  - **Top Engagement** (number) - Highest engagement score
+  - **Saved At** (date) - When saved
+
+## Settings
+
+In the extension options, you can configure:
+- **Notion API Key**: Your integration token
+- **Notion Database ID**: The database where posts will be saved
+- **Max Comments to Save**: Choose 5, 10, 20, 50, or all comments (default: 10)
+
+Comments are always sorted by engagement score (highest first).
 
 ## Files
 
@@ -97,6 +143,10 @@ Your Notion database should have these properties:
 ## Version History
 
 ### v2.0 (Current)
+- **Smart post detection**: Separates main post from comments
+- **Comment extraction**: Extracts all comments with engagement metrics
+- **Engagement sorting**: Sorts comments by likes × 2 + replies × 1
+- **Configurable**: Choose how many top comments to save (5-50 or all)
 - Modern Facebook post selectors for 2024 layout
 - Custom "Save to Notion" button
 - Direct Notion API integration

@@ -12,7 +12,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function saveToNotion(data) {
-  const { content, metadata } = data;
+  const { mainPost, comments, metadata, stats } = data;
+  
+  // Constants
+  const NOTION_BLOCK_CHAR_LIMIT = 2000;
   
   // Get Notion credentials from storage
   const config = await chrome.storage.sync.get(['notionApiKey', 'notionDatabaseId']);
@@ -21,7 +24,7 @@ async function saveToNotion(data) {
     throw new Error('Notion API key or Database ID not configured. Please set them in extension options.');
   }
   
-  // Save to Notion
+  // Save to Notion with new structure
   const response = await fetch('https://api.notion.com/v1/pages', {
     method: 'POST',
     headers: {
@@ -32,15 +35,18 @@ async function saveToNotion(data) {
     body: JSON.stringify({
       parent: { database_id: config.notionDatabaseId },
       properties: {
-        'Treść': {
+        // Main post as title
+        'Treść Posta': {
           title: [
             {
               text: {
-                content: content.substring(0, 100) + (content.length > 100 ? '...' : '')
+                content: mainPost.substring(0, 100) + (mainPost.length > 100 ? '...' : '')
               }
             }
           ]
         },
+        
+        // Source
         'Source': {
           rich_text: [
             {
@@ -50,6 +56,8 @@ async function saveToNotion(data) {
             }
           ]
         },
+        
+        // Author
         'Author': {
           rich_text: [
             {
@@ -59,9 +67,23 @@ async function saveToNotion(data) {
             }
           ]
         },
+        
+        // URL
         'URL': {
           url: metadata.url
         },
+        
+        // Comments Count
+        'Comments Count': {
+          number: stats.commentsCount
+        },
+        
+        // Top Engagement
+        'Top Engagement': {
+          number: stats.topEngagement
+        },
+        
+        // Saved At
         'Saved At': {
           date: {
             start: new Date().toISOString()
@@ -69,6 +91,21 @@ async function saveToNotion(data) {
         }
       },
       children: [
+        // Full main post text
+        {
+          object: 'block',
+          type: 'heading_2',
+          heading_2: {
+            rich_text: [
+              {
+                type: 'text',
+                text: {
+                  content: '📄 Treść Posta'
+                }
+              }
+            ]
+          }
+        },
         {
           object: 'block',
           type: 'paragraph',
@@ -77,7 +114,44 @@ async function saveToNotion(data) {
               {
                 type: 'text',
                 text: {
-                  content: content
+                content: mainPost.substring(0, NOTION_BLOCK_CHAR_LIMIT) // Notion has 2000 char limit per block
+                }
+              }
+            ]
+          }
+        },
+        
+        // Divider
+        {
+          object: 'block',
+          type: 'divider',
+          divider: {}
+        },
+        
+        // Comments section
+        {
+          object: 'block',
+          type: 'heading_2',
+          heading_2: {
+            rich_text: [
+              {
+                type: 'text',
+                text: {
+                  content: `💬 Komentarze (${stats.commentsCount} total)`
+                }
+              }
+            ]
+          }
+        },
+        {
+          object: 'block',
+          type: 'paragraph',
+          paragraph: {
+            rich_text: [
+              {
+                type: 'text',
+                text: {
+                content: comments.substring(0, NOTION_BLOCK_CHAR_LIMIT) // Notion has 2000 char limit per block
                 }
               }
             ]
