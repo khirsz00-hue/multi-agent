@@ -1,38 +1,27 @@
 {
   "manifest_version": 3,
   "name": "Facebook to Notion Saver",
-  "version": "1.0.0",
-  "description": "Automatically save Facebook posts to Notion when you click Save",
+  "version": "2.0",
+  "description": "Save Facebook posts to Notion with one click",
   "permissions": [
     "storage",
-    "notifications"
+    "activeTab"
   ],
   "host_permissions": [
     "https://*.facebook.com/*",
-    "https://*.vercel.app/*",
-    "http://localhost:*/*"
-  ],
-  "content_scripts": [
-    {
-      "matches": [
-        "https://www.facebook.com/*",
-        "https://facebook.com/*"
-      ],
-      "js": ["content-script.js"],
-      "run_at": "document_end"
-    }
+    "https://api.notion.com/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icon16.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
+  "content_scripts": [
+    {
+      "matches": ["https://*.facebook.com/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
     }
-  },
+  ],
+  "options_page": "options.html",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",

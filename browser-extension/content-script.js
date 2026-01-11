@@ -1,147 +1,237 @@
 // Facebook to Notion - Content Script
 
-console.log('Facebook to Notion Saver: Content script loaded')
+console.log('Facebook to Notion Saver: Content script loaded');
 
-// Listen for clicks on Facebook
-document.addEventListener('click', async (event) => {
-  const target = event.target
+// Modern Facebook post selectors (2024)
+const POST_SELECTORS = [
+  // Feed posts
+  'div[role="article"]',
+  'div.x1yztbdb.x1n2onr6.xh8yej3.x1ja2u2z',
   
-  // Check if clicked element is a "Save" button
-  // Facebook uses various selectors, we need to check multiple patterns
-  // Support both English and Polish labels
-  const isSaveButton = 
-    target.getAttribute('aria-label')?.includes('Save') ||
-    target.getAttribute('aria-label')?.includes('Zapisz') ||
-    target.closest('[aria-label*="Save"]') ||
-    target.closest('[aria-label*="Zapisz"]')
+  // Group posts
+  'div[data-pagelet^="FeedUnit"]',
   
-  if (isSaveButton) {
-    console.log('Save button clicked! Extracting post data...')
+  // Profile posts
+  'div.x1hc1fzr.x1unhpq9',
+  
+  // Fallback
+  'div[data-ad-preview="message"]'
+];
+
+const TEXT_SELECTORS = [
+  'div[dir="auto"][style*="text-align"]',
+  'div.xdj266r.x11i5rnm.xat24cr.x1mh8g0r',
+  'div[data-ad-comet-preview="message"]',
+  'span.x193iq5w'
+];
+
+// Retry mechanism with exponential backoff
+async function waitForElement(selectors, timeout = 5000, retries = 5) {
+  const startTime = Date.now();
+  
+  for (let attempt = 0; attempt < retries; attempt++) {
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+      if (element) {
+        console.log(`Found element with selector: ${selector}`);
+        return element;
+      }
+    }
+    
+    if (Date.now() - startTime > timeout) {
+      throw new Error(`Timeout: Could not find element after ${timeout}ms`);
+    }
+    
+    // Wait with exponential backoff
+    await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+  }
+  
+  throw new Error('Could not find element with any selector');
+}
+
+// Improved text extraction
+function extractPostText(container) {
+  let text = '';
+  
+  // Try all text selectors
+  for (const selector of TEXT_SELECTORS) {
+    const elements = container.querySelectorAll(selector);
+    if (elements.length > 0) {
+      text = Array.from(elements)
+        .map(el => el.textContent.trim())
+        .filter(t => t.length > 0)
+        .join('\n');
+      
+      if (text.length > 0) break;
+    }
+  }
+  
+  // Fallback: get all text from container
+  if (!text) {
+    text = container.textContent.trim();
+  }
+  
+  return text;
+}
+
+// Extract post metadata
+function extractPostMetadata(container) {
+  const metadata = {
+    author: '',
+    timestamp: '',
+    url: window.location.href,
+    type: 'post'
+  };
+  
+  // Author
+  const authorEl = container.querySelector('a[role="link"] strong, h4 a, span.x193iq5w strong');
+  if (authorEl) {
+    metadata.author = authorEl.textContent.trim();
+  }
+  
+  // Timestamp
+  const timeEl = container.querySelector('a[aria-label*="ago"], span[id*="jsc_"] a');
+  if (timeEl) {
+    metadata.timestamp = timeEl.getAttribute('aria-label') || timeEl.textContent;
+  }
+  
+  // Detect post type
+  if (window.location.href.includes('/groups/')) {
+    metadata.type = 'group_post';
+  } else if (window.location.href.includes('/profile/')) {
+    metadata.type = 'profile_post';
+  }
+  
+  return metadata;
+}
+
+// Create save button
+function createSaveButton() {
+  const button = document.createElement('button');
+  button.textContent = '💾 Save to Notion';
+  button.className = 'fb-to-notion-save-btn';
+  button.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+  `;
+  
+  button.onmouseover = () => {
+    button.style.transform = 'translateY(-2px)';
+    button.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
+  };
+  
+  button.onmouseout = () => {
+    button.style.transform = 'translateY(0)';
+    button.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+  };
+  
+  button.onclick = async () => {
+    button.textContent = '⏳ Extracting...';
+    button.disabled = true;
     
     try {
-      // Find the post container
-      const postElement = target.closest('[role="article"]') || 
-                         target.closest('[data-pagelet^="FeedUnit"]')
+      await extractAndSavePost();
+      button.textContent = '✅ Saved!';
+      button.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
       
-      if (!postElement) {
-        console.warn('Could not find post container')
-        return
-      }
-      
-      // Extract post data
-      const postData = extractPostData(postElement)
-      
-      if (postData.content) {
-        // Send to background script
-        chrome.runtime.sendMessage({
-          action: 'saveToNotion',
-          data: postData
-        }, (response) => {
-          if (response?.success) {
-            showNotification('✅ Saved to Notion!')
-          } else {
-            showNotification('❌ Error: ' + (response?.error || 'Unknown error'))
-          }
-        })
-      }
+      setTimeout(() => {
+        button.textContent = '💾 Save to Notion';
+        button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        button.disabled = false;
+      }, 2000);
       
     } catch (error) {
-      console.error('Error extracting post:', error)
-      showNotification('❌ Failed to extract post')
+      console.error('Save error:', error);
+      button.textContent = '❌ Error';
+      button.style.background = 'linear-gradient(135deg, #eb3349 0%, #f45c43 100%)';
+      alert(`Error: ${error.message}`);
+      
+      setTimeout(() => {
+        button.textContent = '💾 Save to Notion';
+        button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        button.disabled = false;
+      }, 2000);
     }
-  }
-}, true) // Use capture phase to catch events early
-
-// Extract post data from DOM
-function extractPostData(postElement) {
-  try {
-    // Get post URL
-    const linkElement = postElement.querySelector('a[href*="/posts/"]') || 
-                       postElement.querySelector('a[href*="/permalink/"]')
-    const url = linkElement ? linkElement.href : window.location.href
-    
-    // Get post content - try multiple selectors
-    const contentElement = postElement.querySelector('[data-ad-comet-preview="message"]') ||
-                          postElement.querySelector('[data-ad-preview="message"]') ||
-                          postElement.querySelector('[dir="auto"]')
-    
-    const content = contentElement ? contentElement.innerText.trim() : ''
-    
-    // Get author
-    const authorElement = postElement.querySelector('a[role="link"] strong') ||
-                         postElement.querySelector('h2 a') ||
-                         postElement.querySelector('h3 a')
-    const author = authorElement ? authorElement.innerText.trim() : 'Unknown'
-    
-    // Generate title (first 100 chars of content or author + date)
-    const title = content.length > 0 
-      ? content.substring(0, 100) + (content.length > 100 ? '...' : '')
-      : `${author} - ${new Date().toLocaleDateString()}`
-    
-    // Get comments (top level only, limit to 10)
-    const comments = []
-    const commentElements = postElement.querySelectorAll('[role="article"] [dir="auto"]')
-    
-    for (let i = 0; i < Math.min(commentElements.length, 10); i++) {
-      const commentText = commentElements[i].innerText.trim()
-      if (commentText && commentText !== content) {
-        comments.push(commentText)
-      }
-    }
-    
-    return {
-      url,
-      title,
-      content,
-      author,
-      comments,
-      timestamp: new Date().toISOString()
-    }
-    
-  } catch (error) {
-    console.error('Error extracting post data:', error)
-    return { content: null }
-  }
+  };
+  
+  return button;
 }
 
-// Show notification toast
-function showNotification(message) {
-  const notification = document.createElement('div')
-  notification.textContent = message
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: ${message.includes('✅') ? '#10b981' : '#ef4444'};
-    color: white;
-    padding: 16px 24px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    z-index: 999999;
-    font-family: system-ui, -apple-system, sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    animation: slideIn 0.3s ease-out;
-  `
+// Main extraction function
+async function extractAndSavePost() {
+  console.log('🔍 Starting post extraction...');
   
-  document.body.appendChild(notification)
+  // Wait for post container
+  const container = await waitForElement(POST_SELECTORS);
+  console.log('✅ Found post container:', container);
   
-  setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease-in'
-    setTimeout(() => notification.remove(), 300)
-  }, 3000)
+  // Extract text
+  const text = extractPostText(container);
+  if (!text || text.length < 10) {
+    throw new Error('Post text too short or empty');
+  }
+  console.log('✅ Extracted text:', text.substring(0, 100) + '...');
+  
+  // Extract metadata
+  const metadata = extractPostMetadata(container);
+  console.log('✅ Extracted metadata:', metadata);
+  
+  // Send to background script (which will save to Notion)
+  const response = await chrome.runtime.sendMessage({
+    action: 'saveToNotion',
+    data: {
+      content: text,
+      metadata: metadata
+    }
+  });
+  
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to save to Notion');
+  }
+  
+  console.log('✅ Saved to Notion successfully!');
+  return response;
 }
 
-// Add CSS animations
-const style = document.createElement('style')
-style.textContent = `
-  @keyframes slideIn {
-    from { transform: translateX(400px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+// Initialize when page loads
+function init() {
+  console.log('Facebook to Notion Saver: Content script loaded');
+  
+  // Remove old button if exists
+  const oldButton = document.querySelector('.fb-to-notion-save-btn');
+  if (oldButton) oldButton.remove();
+  
+  // Add save button
+  const button = createSaveButton();
+  document.body.appendChild(button);
+  
+  console.log('✅ Save button added to page');
+}
+
+// Run init when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+// Re-init on navigation (Facebook is SPA)
+let lastUrl = location.href;
+new MutationObserver(() => {
+  const url = location.href;
+  if (url !== lastUrl) {
+    lastUrl = url;
+    setTimeout(init, 1000); // Wait for new content to load
   }
-  @keyframes slideOut {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(400px); opacity: 0; }
-  }
-`
-document.head.appendChild(style)
+}).observe(document, { subtree: true, childList: true });
