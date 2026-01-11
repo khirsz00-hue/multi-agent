@@ -1,4 +1,4 @@
-// Load saved settings
+// Load saved settings (default API URL is configurable via UI)
 chrome.storage.sync.get({ 
   apiUrl: 'https://multi-agent-one.vercel.app' 
 }, (items) => {

@@ -365,7 +365,7 @@ For support, email support@yourdomain.com or join our Discord community.
 #### 3. Configure API URL
 
 1. Click extension icon in toolbar
-2. Enter your API URL: `https://multi-agent-one.vercel.app`
+2. Enter your API URL: `https://your-deployment-url.vercel.app` (replace with your actual deployment URL)
 3. Click "Save Settings"
 
 #### 4. Setup Notion Integration

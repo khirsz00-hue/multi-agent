@@ -9,7 +9,8 @@
   ],
   "host_permissions": [
     "https://*.facebook.com/*",
-    "https://multi-agent-one.vercel.app/*"
+    "https://*.vercel.app/*",
+    "http://localhost:*/*"
   ],
   "content_scripts": [
     {

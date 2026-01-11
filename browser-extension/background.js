@@ -14,7 +14,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Send post data to API
 async function saveToNotion(postData) {
   try {
-    // Get API URL from storage
+    // Get API URL from storage (default is configurable via extension popup)
     const { apiUrl } = await chrome.storage.sync.get({ 
       apiUrl: 'https://multi-agent-one.vercel.app' 
     })
