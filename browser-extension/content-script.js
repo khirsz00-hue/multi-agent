@@ -49,26 +49,39 @@ async function waitForElement(selectors, timeout = 5000, retries = 5) {
   throw new Error('Could not find element with any selector');
 }
 
-// Improved text extraction
+// Improved text extraction with multiple strategies
 function extractPostText(container) {
   let text = '';
   
-  // Try all text selectors
-  for (const selector of TEXT_SELECTORS) {
+  // Try multiple selectors for better text extraction
+  const textSelectors = [
+    '[data-ad-comet-preview="message"]',
+    '[data-ad-preview="message"]',
+    'div[dir="auto"][style*="text-align"]',
+    'div.xdj266r.x11i5rnm.xat24cr.x1mh8g0r',
+    'span.x193iq5w',
+    'div[dir="auto"]'
+  ];
+  
+  // Try all selectors
+  for (const selector of textSelectors) {
     const elements = container.querySelectorAll(selector);
     if (elements.length > 0) {
       text = Array.from(elements)
         .map(el => el.textContent.trim())
-        .filter(t => t.length > 0)
+        .filter(t => t.length > 20) // Only substantial text
         .join('\n');
       
-      if (text.length > 0) break;
+      if (text.length > 0) {
+        console.log(`📝 Extracted text using selector: ${selector}`);
+        break;
+      }
     }
   }
   
-  // Fallback: get all text from container
-  if (!text) {
-    text = container.textContent.trim();
+  // Fallback: get innerText of entire element
+  if (!text || text.length === 0) {
+    text = container.innerText?.trim() || '';
   }
   
   return text;
@@ -76,13 +89,25 @@ function extractPostText(container) {
 
 // Find the main post (not comments)
 function findMainPost() {
+  console.log('🔍 Starting main post detection...');
   const articles = document.querySelectorAll('div[role="article"]');
   console.log(`🔍 Found ${articles.length} articles (posts + comments)`);
   
+  const validPosts = [];
+  
   for (const article of articles) {
-    // 1. Check if inside a comment section
+    // CRITICAL: Filter comments by aria-label
+    const ariaLabel = article.getAttribute('aria-label') || '';
+    
+    if (ariaLabel.includes('Komentarz') || 
+        ariaLabel.includes('Comment') ||
+        ariaLabel.toLowerCase().includes('comment')) {
+      console.log(`⏭️ Skipping comment: ${ariaLabel.substring(0, 50)}...`);
+      continue;
+    }
+    
+    // Skip if inside comment section
     const isInCommentSection = article.closest('[aria-label*="omment"]') || 
-                               article.closest('[aria-label*="Comment"]') ||
                                article.closest('[data-pagelet*="Comment"]');
     
     if (isInCommentSection) {
@@ -90,32 +115,41 @@ function findMainPost() {
       continue;
     }
     
-    // 2. Extract text to check length
+    // Extract text
     const text = extractPostText(article);
-    if (text.length < 100) {
-      console.log(`⏭️ Skipping: Text too short (${text.length} chars)`);
+    const textLength = text.length;
+    
+    console.log(`📝 Found valid post candidate: ${textLength} chars, aria-label: "${ariaLabel.substring(0, 50)}..."`);
+    
+    // Must have substantial content (main posts are usually >50 chars)
+    if (textLength < 50) {
+      console.log('⏭️ Skipping: Text too short (main posts usually >50 chars)');
       continue;
     }
     
-    // 3. Check if visible/near top
-    const rect = article.getBoundingClientRect();
-    if (rect.top > window.innerHeight * 2) {
-      console.log('⏭️ Skipping: Too far down the page');
-      continue;
-    }
-    
-    // 4. Check for post header (author profile, timestamp)
-    const hasPostHeader = article.querySelector('h2, h3, h4') || 
-                          article.querySelector('a[role="link"] strong');
-    
-    if (hasPostHeader && text.length >= 100) {
-      console.log('✅ Found main post!');
-      return article;
-    }
+    validPosts.push({
+      element: article,
+      text: text,
+      textLength: textLength,
+      ariaLabel: ariaLabel
+    });
   }
   
-  console.log('⚠️ No main post found, returning first article as fallback');
-  return articles[0] || null;
+  console.log(`✅ Found ${validPosts.length} valid post candidates`);
+  
+  if (validPosts.length === 0) {
+    console.error('❌ No valid posts found. Make sure you are on a Facebook post or group feed.');
+    return null;
+  }
+  
+  // Sort by text length (longest = main post)
+  validPosts.sort((a, b) => b.textLength - a.textLength);
+  
+  const mainPost = validPosts[0];
+  console.log(`🎯 Selected main post: ${mainPost.textLength} chars`);
+  console.log(`📄 Preview: ${mainPost.text.substring(0, 100)}...`);
+  
+  return mainPost.element;
 }
 
 // Extract comments with engagement metrics
@@ -321,7 +355,12 @@ async function extractAndSavePost() {
   // 1. Find main post (not comments)
   const mainPost = findMainPost();
   if (!mainPost) {
-    throw new Error('Could not find main post');
+    throw new Error('❌ Nie można znaleźć głównego posta.\n\n' +
+                   'Upewnij się że:\n' +
+                   '1. Jesteś na stronie z postem Facebook\n' +
+                   '2. Post jest widoczny na stronie\n' +
+                   '3. Nie próbujesz zapisać samego komentarza\n\n' +
+                   'Spróbuj odświeżyć stronę i spróbuj ponownie.');
   }
   console.log('✅ Found main post:', mainPost);
   
