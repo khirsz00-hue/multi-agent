@@ -70,6 +70,7 @@ async function generateMonthlyContent(agentId: string, data: any, supabase: any)
   const { data: painPoints } = await supabase
     .from('audience_insights')
     .select('*')
+    .eq('agent_id', agentId)
     .order('frequency', { ascending: false })
     .limit(15)
   
@@ -245,11 +246,20 @@ Zwróć JSON z nową wersją:
 async function updatePost(agentId: string, data: any, supabase: any) {
   const { postId, updates } = data
   
+  // Get existing post to merge metadata
+  const { data: existingPost } = await supabase
+    .from('content_calendar')
+    .select('metadata')
+    .eq('id', postId)
+    .eq('agent_id', agentId)
+    .single()
+  
   const { error } = await supabase
     .from('content_calendar')
     .update({
       ...updates,
       metadata: {
+        ...(existingPost?.metadata || {}),
         edited: true,
         edited_at: new Date().toISOString()
       }
