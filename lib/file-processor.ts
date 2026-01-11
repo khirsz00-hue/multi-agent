@@ -38,9 +38,9 @@ async function processPDF(content: string): Promise<string> {
 }
 
 function processCSV(content: string): string {
-  // Convert CSV to readable format
-  const lines = content.split('\n')
-  return lines.join('\n')
+  // Basic CSV formatting - keep as-is for now
+  // Future enhancement: Parse CSV with library like papaparse
+  return content
 }
 
 function processJSON(content: string): string {

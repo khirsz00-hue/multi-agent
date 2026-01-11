@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 export async function POST(request: Request) {
   try {
@@ -211,9 +212,10 @@ async function generateOpenAIResponse(messages: any[], agent: any): Promise<stri
 }
 
 async function generateAnthropicResponse(messages: any[], agent: any): Promise<string> {
+  // Note: Type assertion needed due to SDK version compatibility
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY
-  }) as any // Type assertion to avoid TS error with older SDK version
+  }) as any
 
   // Separate system messages from conversation
   const systemMessages = messages.filter((m: any) => m.role === 'system')
@@ -232,9 +234,7 @@ async function generateAnthropicResponse(messages: any[], agent: any): Promise<s
 
 async function generateGoogleResponse(messages: any[], agent: any): Promise<string> {
   // Google AI (Gemini) implementation
-  const { GoogleGenerativeAI } = require('@google/generative-ai')
-
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY)
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '')
   const model = genAI.getGenerativeModel({ model: agent.llm_model || 'gemini-pro' })
 
   // Convert messages to Google format
