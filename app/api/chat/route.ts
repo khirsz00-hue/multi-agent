@@ -1,8 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { isNumberArray } from '@/lib/utils'
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+
+const MAX_CONTEXT_CHUNKS = 3
+type ChunkRow = { content: string; embedding?: number[] | null }
+type ChunkWithEmbedding = ChunkRow & { embedding: number[] }
 
 export async function POST(request: Request) {
   try {
@@ -180,9 +185,11 @@ async function getRelevantContext(
       return []
     }
 
+    const typedChunks = chunks as ChunkRow[]
+
     // Try semantic search if embeddings are available
-    const chunksWithEmbeddings = chunks.filter(
-      (chunk: any) => Array.isArray(chunk.embedding) && chunk.embedding.length > 0
+    const chunksWithEmbeddings = typedChunks.filter(
+      (chunk): chunk is ChunkWithEmbedding => isNumberArray(chunk.embedding)
     )
 
     if (chunksWithEmbeddings.length > 0 && process.env.OPENAI_API_KEY) {
@@ -193,19 +200,23 @@ async function getRelevantContext(
           input: query
         })
 
-        const queryEmbedding = embeddingResponse.data[0].embedding as number[]
+        const queryEmbedding = embeddingResponse.data?.[0]?.embedding
 
-        const rankedContexts = chunksWithEmbeddings
-          .map((chunk: any) => ({
-            content: chunk.content,
-            score: cosineSimilarity(queryEmbedding, chunk.embedding as number[])
-          }))
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 3)
-          .map((item) => item.content)
+        if (queryEmbedding) {
+          const rankedContexts = chunksWithEmbeddings
+            .map((chunk) => ({
+              content: chunk.content,
+              score: cosineSimilarity(queryEmbedding, chunk.embedding)
+            }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, MAX_CONTEXT_CHUNKS)
+            .map((item) => item.content)
 
-        if (rankedContexts.length > 0) {
-          return rankedContexts
+          if (rankedContexts.length > 0) {
+            return rankedContexts
+          }
+        } else {
+          console.warn('Semantic search skipped: no embedding returned for query')
         }
       } catch (embeddingError) {
         console.error('Semantic search failed:', embeddingError)
@@ -215,16 +226,45 @@ async function getRelevantContext(
     // Fallback: simple keyword-based search
     const contexts: string[] = []
     const queryLower = query.toLowerCase()
+    const queryTokens = new Set(queryLower.split(/\W+/).filter(Boolean))
 
-    for (const chunk of chunks) {
+    for (const chunk of typedChunks) {
       if (chunk.content.toLowerCase().includes(queryLower)) {
         contexts.push(chunk.content)
-        if (contexts.length >= 3) break // Limit to top 3 chunks
+        if (contexts.length >= MAX_CONTEXT_CHUNKS) break
       }
     }
 
     if (contexts.length === 0) {
-      return chunks.slice(0, 3).map((chunk: any) => chunk.content)
+      if (queryTokens.size === 0) {
+        return []
+      }
+
+      const overlapContexts: { content: string; overlap: number }[] = []
+
+      for (const chunk of typedChunks) {
+        const tokens = chunk.content.toLowerCase().split(/\W+/)
+        const overlap = tokens.reduce(
+          (count, token) => count + (queryTokens.has(token) ? 1 : 0),
+          0
+        )
+
+        if (overlap > 0) {
+          overlapContexts.push({ content: chunk.content, overlap })
+
+          if (
+            overlapContexts.length >= MAX_CONTEXT_CHUNKS &&
+            overlap === queryTokens.size // perfect token match, no better overlap expected
+          ) {
+            break
+          }
+        }
+      }
+
+      return overlapContexts
+        .sort((a, b) => b.overlap - a.overlap)
+        .slice(0, MAX_CONTEXT_CHUNKS)
+        .map(({ content }) => content)
     }
 
     return contexts
@@ -236,15 +276,27 @@ async function getRelevantContext(
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {
-  const length = Math.min(a.length, b.length)
+  if (a.length === 0 || b.length === 0) {
+    console.warn('Empty embedding provided to cosineSimilarity')
+    return 0
+  }
+
+  if (a.length !== b.length) {
+    console.warn('Mismatched embedding dimensions', { a: a.length, b: b.length })
+    return 0
+  }
+
   let dotProduct = 0
   let normA = 0
   let normB = 0
 
-  for (let i = 0; i < length; i++) {
-    dotProduct += a[i] * b[i]
-    normA += a[i] * a[i]
-    normB += b[i] * b[i]
+  for (let i = 0; i < a.length; i++) {
+    const valueA = a[i]
+    const valueB = b[i]
+
+    dotProduct += valueA * valueB
+    normA += valueA * valueA
+    normB += valueB * valueB
   }
 
   if (normA === 0 || normB === 0) {

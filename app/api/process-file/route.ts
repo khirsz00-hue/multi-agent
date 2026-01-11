@@ -3,6 +3,17 @@ import { NextResponse } from 'next/server'
 import { chunkText } from '@/lib/file-processor'
 import OpenAI from 'openai'
 
+type ChunkRecord = {
+  file_id: string
+  content: string
+  chunk_index: number
+  metadata: {
+    file_name: string
+    file_type?: string | null
+  }
+  embedding?: number[]
+}
+
 export async function POST(request: Request) {
   try {
     const { fileId } = await request.json()
@@ -74,7 +85,7 @@ export async function POST(request: Request) {
           input: chunks
         })
 
-        embeddings = embeddingResponse.data.map((item) => item.embedding as number[])
+        embeddings = embeddingResponse.data.map((item) => item.embedding)
       } catch (embeddingError) {
         console.error('Failed to generate embeddings:', embeddingError)
       }
@@ -82,7 +93,7 @@ export async function POST(request: Request) {
 
     // Save chunks to database
     const chunksToInsert = chunks.map((chunk, index) => {
-      const chunkRecord: any = {
+      const chunkRecord: ChunkRecord = {
         file_id: fileId,
         content: chunk,
         chunk_index: index,
@@ -92,8 +103,9 @@ export async function POST(request: Request) {
         }
       }
 
-      if (embeddings?.[index]) {
-        chunkRecord.embedding = embeddings[index]
+      const embedding = embeddings?.[index]
+      if (embedding) {
+        chunkRecord.embedding = embedding
       }
 
       return chunkRecord
