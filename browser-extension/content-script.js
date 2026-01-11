@@ -23,7 +23,6 @@ const TEXT_SELECTORS = [
   '[data-ad-preview="message"]',
   'div[dir="auto"][style*="text-align"]',
   'div.xdj266r.x11i5rnm.xat24cr.x1mh8g0r',
-  'div[data-ad-comet-preview="message"]',
   'span.x193iq5w',
   'div[dir="auto"]'
 ];
@@ -91,17 +90,21 @@ function findMainPost() {
   for (const article of articles) {
     // CRITICAL: Filter comments by aria-label
     const ariaLabel = article.getAttribute('aria-label') || '';
+    const ariaLabelLower = ariaLabel.toLowerCase();
     
+    // Check for comment markers in both Polish and English
     if (ariaLabel.includes('Komentarz') || 
         ariaLabel.includes('Comment') ||
-        ariaLabel.toLowerCase().includes('comment')) {
+        ariaLabelLower.includes('comment') ||
+        ariaLabelLower.includes('komentarz')) {
       console.log(`⏭️ Skipping comment: ${ariaLabel.substring(0, 50)}...`);
       continue;
     }
     
     // Skip if inside comment section
-    // Note: [aria-label*="omment"] matches both "Comment" and "Komentarz"
-    const isInCommentSection = article.closest('[aria-label*="omment"]') || 
+    // Check for both "Comment" and "Komentarz" in parent elements
+    const isInCommentSection = article.closest('[aria-label*="Comment"]') || 
+                               article.closest('[aria-label*="Komentarz"]') ||
                                article.closest('[data-pagelet*="Comment"]');
     
     if (isInCommentSection) {
