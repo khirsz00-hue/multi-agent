@@ -336,10 +336,123 @@ WITH CHECK (auth.uid() IS NOT NULL);
 - **File Upload**: Validated file types and sizes
 - **CORS**: Configured for your domains
 
+## 🤖 Multi-Agent System
+
+The platform now supports multi-agent collaboration with specialized agent roles that can communicate and work together.
+
+### Agent Roles
+
+The system defines four specialized agent roles:
+
+1. **Strategic Planner** - Defines business KPIs and tracks progress toward goals
+2. **Audience Insights** - Analyzes audience pain points from content
+3. **Marketing Strategist** - Creates content strategy based on KPIs and insights
+4. **Content Executor** - Generates and delivers daily content
+
+### Strategic Planner Agent
+
+The Strategic Planner agent helps you define and track business KPIs:
+
+#### Features
+- **Define KPIs**: Set business goals with target values, units, and deadlines
+- **Track Progress**: Monitor real-time progress with visual dashboards
+- **Milestone Management**: Break down goals into smaller milestones
+- **Status Alerts**: Get notified when you're ahead, on track, or behind schedule
+- **Inter-Agent Communication**: Share KPI data with other agents via the outputs table
+
+#### Usage
+
+1. **Create a Strategic Planner Agent**
+   - In your space, create a new agent
+   - Set the role to `strategic_planner`
+   - Configure LLM settings as needed
+
+2. **Define a KPI**
+   ```typescript
+   // POST /api/agents/strategic-planner
+   {
+     "agentId": "your-agent-id",
+     "action": "define_kpis",
+     "data": {
+       "goal": "Reach 1000 active users",
+       "targetValue": 1000,
+       "unit": "users",
+       "deadline": "2024-12-31",
+       "description": "Grow our user base to 1000 active monthly users"
+     }
+   }
+   ```
+
+3. **Track Progress**
+   ```typescript
+   // POST /api/agents/strategic-planner
+   {
+     "agentId": "your-agent-id",
+     "action": "check_progress"
+   }
+   ```
+
+4. **Update Metrics**
+   ```typescript
+   // POST /api/agents/strategic-planner
+   {
+     "agentId": "your-agent-id",
+     "action": "update_metric",
+     "data": {
+       "kpiId": "kpi-id",
+       "newValue": 250
+     }
+   }
+   ```
+
+#### UI Components
+
+The platform includes ready-to-use React components:
+
+- **KPITracker**: Displays KPI dashboard with progress bars and status indicators
+- **DefineKPIForm**: Form to create new KPIs
+
+```tsx
+import KPITracker from '@/components/agents/KPITracker'
+import DefineKPIForm from '@/components/agents/DefineKPIForm'
+
+// In your component
+<DefineKPIForm agentId={agentId} onSuccess={() => refetch()} />
+<KPITracker agentId={agentId} />
+```
+
+### Agent Communication
+
+Agents communicate through the `agent_outputs` table:
+
+- Each agent can write outputs with specific types (e.g., `kpis`, `progress_check`)
+- Other agents can read these outputs using the `reads_from` field
+- Outputs support versioning and validity periods
+- Data is stored as JSONB for flexible schema
+
+Example output structure:
+```json
+{
+  "agent_id": "strategic-planner-id",
+  "output_type": "kpis",
+  "data": {
+    "kpi_id": "uuid",
+    "goal": "Reach 1000 users",
+    "target": 1000,
+    "unit": "users",
+    "deadline": "2024-12-31"
+  }
+}
+```
+
 ## 🎯 Roadmap
 
+- [x] Multi-agent foundation with specialized roles
+- [x] Strategic Planner agent with KPI tracking
+- [ ] Audience Insights agent implementation
+- [ ] Marketing Strategist agent implementation
+- [ ] Content Executor agent implementation
 - [ ] Multi-user collaboration in spaces
-- [ ] Agent-to-agent communication
 - [ ] Advanced file processing (PDFs, images, code)
 - [ ] Conversation export and sharing
 - [ ] Custom embeddings models
