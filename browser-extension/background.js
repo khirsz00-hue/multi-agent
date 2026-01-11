@@ -14,6 +14,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function saveToNotion(data) {
   const { mainPost, comments, metadata, stats } = data;
   
+  // Constants
+  const NOTION_BLOCK_CHAR_LIMIT = 2000;
+  
   // Get Notion credentials from storage
   const config = await chrome.storage.sync.get(['notionApiKey', 'notionDatabaseId']);
   
@@ -111,7 +114,7 @@ async function saveToNotion(data) {
               {
                 type: 'text',
                 text: {
-                  content: mainPost.substring(0, 2000) // Notion has 2000 char limit per block
+                content: mainPost.substring(0, NOTION_BLOCK_CHAR_LIMIT) // Notion has 2000 char limit per block
                 }
               }
             ]
@@ -148,7 +151,7 @@ async function saveToNotion(data) {
               {
                 type: 'text',
                 text: {
-                  content: comments.substring(0, 2000) // Notion has 2000 char limit per block
+                content: comments.substring(0, NOTION_BLOCK_CHAR_LIMIT) // Notion has 2000 char limit per block
                 }
               }
             ]

@@ -151,7 +151,7 @@ function extractComments(postContainer) {
       
       // Extract likes
       let likes = 0;
-      const likeElements = article.querySelectorAll('[aria-label*="reakcj"], [aria-label*="Like"], [aria-label*="like"]');
+      const likeElements = article.querySelectorAll('[aria-label*="reakcj"], [aria-label*="reakcje"], [aria-label*="Like"], [aria-label*="like"]');
       likeElements.forEach(el => {
         const ariaLabel = el.getAttribute('aria-label');
         if (ariaLabel) {
@@ -162,7 +162,7 @@ function extractComments(postContainer) {
       
       // Extract reply count
       let replies = 0;
-      const replyElements = article.querySelectorAll('[aria-label*="odpowied"], [aria-label*="repl"], [aria-label*="Repl"]');
+      const replyElements = article.querySelectorAll('[aria-label*="odpowied"], [aria-label*="odpowiedzi"], [aria-label*="repl"], [aria-label*="Repl"]');
       replyElements.forEach(el => {
         const ariaLabel = el.getAttribute('aria-label');
         if (ariaLabel) {
@@ -171,8 +171,10 @@ function extractComments(postContainer) {
         }
       });
       
-      // Calculate engagement score
-      const engagementScore = (likes * 2) + (replies * 1);
+      // Calculate engagement score (likes weighted 2x, replies weighted 1x)
+      const LIKE_WEIGHT = 2;
+      const REPLY_WEIGHT = 1;
+      const engagementScore = (likes * LIKE_WEIGHT) + (replies * REPLY_WEIGHT);
       
       comments.push({
         text,
