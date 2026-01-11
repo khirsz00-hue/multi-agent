@@ -13,6 +13,7 @@ export default function AudienceInsights({ agentId }: { agentId: string }) {
 
   useEffect(() => {
     loadInsights()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId])
 
   async function loadInsights() {
@@ -73,7 +74,7 @@ export default function AudienceInsights({ agentId }: { agentId: string }) {
       {insights.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-center text-muted-foreground">
-            No insights yet. Click "Analyze Notion Posts" to extract pain points.
+            No insights yet. Click &quot;Analyze Notion Posts&quot; to extract pain points.
           </CardContent>
         </Card>
       ) : (
@@ -91,7 +92,7 @@ export default function AudienceInsights({ agentId }: { agentId: string }) {
                     <p className="font-medium mb-2">{insight.pain_point}</p>
                     {insight.raw_content && (
                       <p className="text-sm text-muted-foreground italic">
-                        "{insight.raw_content}"
+                        &quot;{insight.raw_content}&quot;
                       </p>
                     )}
                   </div>

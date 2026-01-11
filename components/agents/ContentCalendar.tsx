@@ -15,6 +15,7 @@ export default function ContentCalendar({ agentId }: { agentId: string }) {
 
   useEffect(() => {
     loadCurrentMonth()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId])
 
   async function loadCurrentMonth() {
