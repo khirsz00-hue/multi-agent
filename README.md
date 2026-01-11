@@ -11,6 +11,7 @@ A comprehensive AI-powered platform for creating and managing intelligent agents
 - **Intelligent Chat**: Conversational interface with context-aware responses
 - **Vector Search**: Semantic search using pgvector for relevant information retrieval
 - **Real-time Updates**: Live chat updates and file processing status
+- **Facebook to Notion Saver**: Browser extension to save Facebook posts directly to Notion
 
 ## 🏗️ Tech Stack
 
@@ -44,6 +45,16 @@ A comprehensive AI-powered platform for creating and managing intelligent agents
 │       │   └── route.ts       # Chat API route with LLM integration
 │       └── process-file/
 │           └── route.ts       # File processing API route
+│       ├── chat/              # Chat API route
+│       ├── process-file/      # File processing API route
+│       └── facebook-to-notion/ # Facebook to Notion API route
+├── browser-extension/
+│   ├── manifest.json          # Extension configuration
+│   ├── content-script.js      # Facebook Save button detection
+│   ├── background.js          # API communication
+│   ├── popup.html             # Settings UI
+│   ├── popup.js               # Settings logic
+│   └── icon*.png              # Extension icons
 ├── components/
 │   ├── ui/                    # Shadcn/ui base components
 │   ├── AgentBuilder.tsx       # Agent creation/editing form
@@ -60,6 +71,11 @@ A comprehensive AI-powered platform for creating and managing intelligent agents
 │   ├── file-processor.ts      # File chunking utilities
 │   ├── types.ts               # TypeScript types
 │   └── utils.ts               # Utility functions
+│   │   ├── client.ts         # Browser Supabase client
+│   │   └── server.ts         # Server Supabase client
+│   ├── notion.ts             # Notion client helper
+│   ├── types.ts              # TypeScript types
+│   └── utils.ts              # Utility functions
 ├── supabase/
 │   └── migrations/
 │       ├── 00001_initial_schema.sql        # Database schema
@@ -352,6 +368,78 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 📞 Support
 
 For support, email support@yourdomain.com or join our Discord community.
+
+## 📱 Facebook to Notion Saver (Browser Extension)
+
+### Setup
+
+#### 1. Install Extension (Chrome/Edge)
+
+1. Open Chrome → Extensions → Enable "Developer mode"
+2. Click "Load unpacked"
+3. Select the `browser-extension/` folder
+4. Extension is now installed! 
+
+#### 2. Install Extension (Firefox)
+
+1. Open Firefox → `about:debugging`
+2. Click "This Firefox" → "Load Temporary Add-on"
+3. Select `manifest.json` from `browser-extension/`
+4. Extension is now installed!
+
+#### 3. Configure API URL
+
+1. Click extension icon in toolbar
+2. Enter your API URL: `https://your-deployment-url.vercel.app` (replace with your actual deployment URL)
+3. Click "Save Settings"
+
+#### 4. Setup Notion Integration
+
+1. Go to https://www.notion.so/my-integrations
+2. Create new integration: "Multi-Agent FB Saver"
+3. Copy the Internal Integration Token
+4. Add to Vercel environment variables:
+   - `NOTION_API_KEY=secret_xxxxx`
+   - `NOTION_DATABASE_ID=your_notion_database_id`
+5. In your Notion database → Share → Add integration
+
+#### 5. Usage
+
+1. Browse Facebook
+2. See a post you like
+3. Click "Save" button (native Facebook button)
+4. Extension automatically sends to Notion!
+5. Toast notification: "✅ Zapisano do Notion!"
+
+### How It Works
+
+```
+Facebook "Save" click
+    ↓
+Extension extracts: content, comments, URL
+    ↓
+POST /api/facebook-to-notion
+    ↓
+Notion API creates page
+    ↓
+Toast: "✅ Zapisano do Notion!"
+```
+
+### Troubleshooting
+
+**Extension not working?**
+- Check if extension is enabled
+- Check API URL in settings
+- Check browser console for errors
+
+**API errors?**
+- Verify NOTION_API_KEY in Vercel
+- Verify database ID is correct
+- Check if integration is shared with database
+
+**No comments captured?**
+- Extension captures top 10 comments only
+- Some comment formats might not be detected
 
 ---
 
