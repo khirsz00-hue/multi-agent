@@ -19,10 +19,13 @@ const POST_SELECTORS = [
 ];
 
 const TEXT_SELECTORS = [
+  '[data-ad-comet-preview="message"]',
+  '[data-ad-preview="message"]',
   'div[dir="auto"][style*="text-align"]',
   'div.xdj266r.x11i5rnm.xat24cr.x1mh8g0r',
   'div[data-ad-comet-preview="message"]',
-  'span.x193iq5w'
+  'span.x193iq5w',
+  'div[dir="auto"]'
 ];
 
 // Retry mechanism with exponential backoff
@@ -53,18 +56,8 @@ async function waitForElement(selectors, timeout = 5000, retries = 5) {
 function extractPostText(container) {
   let text = '';
   
-  // Try multiple selectors for better text extraction
-  const textSelectors = [
-    '[data-ad-comet-preview="message"]',
-    '[data-ad-preview="message"]',
-    'div[dir="auto"][style*="text-align"]',
-    'div.xdj266r.x11i5rnm.xat24cr.x1mh8g0r',
-    'span.x193iq5w',
-    'div[dir="auto"]'
-  ];
-  
-  // Try all selectors
-  for (const selector of textSelectors) {
+  // Try all text selectors from global constant
+  for (const selector of TEXT_SELECTORS) {
     const elements = container.querySelectorAll(selector);
     if (elements.length > 0) {
       text = Array.from(elements)
@@ -107,6 +100,7 @@ function findMainPost() {
     }
     
     // Skip if inside comment section
+    // Note: [aria-label*="omment"] matches both "Comment" and "Komentarz"
     const isInCommentSection = article.closest('[aria-label*="omment"]') || 
                                article.closest('[data-pagelet*="Comment"]');
     
