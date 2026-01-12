@@ -31,6 +31,29 @@ interface AgentBuilderProps {
   onSave: (agent: Partial<Agent>) => Promise<void>
 }
 
+const AGENT_ROLES = [
+  { 
+    value: 'strategic_planner', 
+    label: 'Strategic Planner',
+    description: 'Defines KPIs and tracks business goals'
+  },
+  { 
+    value: 'audience_insights', 
+    label: 'Audience Insights',
+    description: 'Analyzes audience pain points from content'
+  },
+  { 
+    value: 'marketing_strategist', 
+    label: 'Marketing Strategist',
+    description: 'Creates content strategy based on KPIs and insights'
+  },
+  { 
+    value: 'content_executor', 
+    label: 'Content Executor',
+    description: 'Delivers daily content and sends notifications'
+  }
+]
+
 export function AgentBuilder({
   open,
   onOpenChange,
@@ -39,6 +62,7 @@ export function AgentBuilder({
   onSave,
 }: AgentBuilderProps) {
   const [name, setName] = useState(agent?.name || '')
+  const [role, setRole] = useState<string>(agent?.role || 'marketing_strategist')
   const [type, setType] = useState(agent?.type || 'custom')
   const [description, setDescription] = useState(agent?.description || '')
   const [provider, setProvider] = useState<LLMProvider>(agent?.llm_provider || 'openai')
@@ -57,6 +81,7 @@ export function AgentBuilder({
         space_id: spaceId,
         name,
         type,
+        role,
         description,
         llm_provider: provider,
         llm_model: model,
@@ -92,6 +117,27 @@ export function AgentBuilder({
               placeholder="e.g., Marketing Strategist"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="role">Agent Role *</Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger id="role">
+                <SelectValue placeholder="Select agent role" />
+              </SelectTrigger>
+              <SelectContent>
+                {AGENT_ROLES.map(r => (
+                  <SelectItem key={r.value} value={r.value}>
+                    {r.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {role && (
+              <p className="text-xs text-muted-foreground">
+                {AGENT_ROLES.find(r => r.value === role)?.description}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
