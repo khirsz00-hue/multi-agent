@@ -212,6 +212,7 @@ export default function SpaceDetailPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-1 text-xs text-muted-foreground">
+                      {agent.role && <p>Role: {agent.role.replace(/_/g, ' ')}</p>}
                       <p>Type: {agent.type}</p>
                       <p>Model: {agent.llm_provider} • {agent.llm_model}</p>
                       <p>Created {new Date(agent.created_at).toLocaleDateString()}</p>
