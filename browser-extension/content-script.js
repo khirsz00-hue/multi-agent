@@ -258,16 +258,15 @@ function extractComments(postContainer) {
         comments.push({
           text,
           author,
-          likes: 0,
+          likes: 0,  // Note: Like/reply extraction not implemented for span mode yet
           replies: 0,
           engagementScore: 0,
-          position: i,
-          index: i
+          index: i  // DOM position for chronological ordering
         });
       }
     }
     
-    // Sort comments by DOM order (index)
+    // Sort comments by DOM order (chronological - as they appear in conversation)
     comments.sort((a, b) => a.index - b.index);
     
     console.log(`✅ Found ${comments.length} total comments (before and after main post)`);
@@ -335,7 +334,7 @@ function extractComments(postContainer) {
           likes,
           replies,
           engagementScore,
-          position: index + 1
+          index: index  // Position in comment list for sorting
         });
         
       } catch (error) {
@@ -360,17 +359,30 @@ function formatCommentsForNotion(comments, maxComments = 10) {
   
   const topComments = maxComments > 0 ? comments.slice(0, maxComments) : comments;
   
-  let formatted = `🔥 Top ${topComments.length} Komentarzy (sorted by engagement):\n\n`;
+  // Determine sort type based on whether we have engagement metrics
+  const hasEngagement = topComments.some(c => c.engagementScore > 0);
+  const sortLabel = hasEngagement ? 'sorted by engagement' : 'chronological order';
+  
+  let formatted = `💬 ${topComments.length} Komentarzy (${sortLabel}):\n\n`;
   
   topComments.forEach((comment, index) => {
     formatted += `---\n`;
-    formatted += `#${index + 1} 👤 ${comment.author}  |  ❤️ ${comment.likes} lajków  |  💬 ${comment.replies} odpowiedzi\n\n`;
-    formatted += `${comment.text}\n\n`;
+    formatted += `#${index + 1} 👤 ${comment.author}`;
+    
+    // Only show engagement metrics if available
+    if (hasEngagement) {
+      formatted += `  |  ❤️ ${comment.likes} lajków  |  💬 ${comment.replies} odpowiedzi`;
+    }
+    
+    formatted += `\n\n${comment.text}\n\n`;
   });
   
   formatted += `---\n`;
   formatted += `Total comments analyzed: ${comments.length}\n`;
-  formatted += `Top engagement score: ${topComments[0]?.engagementScore || 0}\n`;
+  
+  if (hasEngagement) {
+    formatted += `Top engagement score: ${topComments[0]?.engagementScore || 0}\n`;
+  }
   
   return formatted;
 }
