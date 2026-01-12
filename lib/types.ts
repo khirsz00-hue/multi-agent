@@ -14,12 +14,14 @@ export interface Agent {
   space_id: string;
   name: string;
   type: string;
+  role?: string;
   description?: string;
   llm_provider: LLMProvider;
   llm_model: string;
   llm_temperature: number;
   llm_max_tokens: number;
   system_instructions?: string;
+  reads_from?: string[];
   created_at: string;
   updated_at: string;
 }

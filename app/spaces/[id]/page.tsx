@@ -19,6 +19,7 @@ export default function SpaceDetailPage() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
   const [showAgentBuilder, setShowAgentBuilder] = useState(false)
+  const [setupLoading, setSetupLoading] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -69,6 +70,30 @@ export default function SpaceDetailPage() {
     } catch (error) {
       console.error('Error creating agent:', error)
       throw error
+    }
+  }
+
+  const handleSetupAllAgents = async () => {
+    setSetupLoading(true)
+    try {
+      const res = await fetch('/api/setup-agents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spaceId })
+      })
+      
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to setup agents')
+      }
+      
+      await loadSpaceData()
+      alert('✅ All agents created! Check the Dashboard.')
+    } catch (error: any) {
+      console.error('Setup error:', error)
+      alert(`Error: ${error.message}`)
+    } finally {
+      setSetupLoading(false)
     }
   }
 
@@ -130,6 +155,22 @@ export default function SpaceDetailPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Setup banner - only show if agents exist but none have roles */}
+        {agents.length > 0 && !agents.some(a => a.role) && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="font-semibold text-blue-900 mb-2">🚀 Setup Multi-Agent System</h3>
+            <p className="text-sm text-blue-700 mb-3">
+              Create all 4 specialized agents with sample data to see the system in action
+            </p>
+            <Button 
+              onClick={handleSetupAllAgents}
+              disabled={setupLoading}
+            >
+              {setupLoading ? 'Creating Agents...' : 'Create All Agents'}
+            </Button>
+          </div>
+        )}
+
         {agents.length === 0 ? (
           <div className="text-center py-12">
             <Bot className="h-16 w-16 text-gray-400 mx-auto mb-4" />
