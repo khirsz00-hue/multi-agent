@@ -27,6 +27,10 @@ const TEXT_SELECTORS = [
   'div[dir="auto"]'
 ];
 
+// Configuration constants
+const MIN_POST_TEXT_LENGTH = 100; // Minimum chars for valid main post
+const METADATA_PATTERNS = /\d+ godz\.|\d+ min\.|Lubię to!|Komentarz|Wyślij|Like|Comment|Share/g;
+
 // Retry mechanism with exponential backoff
 async function waitForElement(selectors, timeout = 5000, retries = 5) {
   const startTime = Date.now();
@@ -88,11 +92,7 @@ function extractTextFromElement(element) {
     const text = element.innerText?.trim() || '';
     
     // Clean metadata noise (buttons, timestamps, etc.)
-    return text
-      .replace(/\d+ godz\./g, '')
-      .replace(/\d+ min\./g, '')
-      .replace(/Lubię to!|Komentarz|Wyślij|Like|Comment|Share/g, '')
-      .trim();
+    return text.replace(METADATA_PATTERNS, '').trim();
   }
   
   // For div[role="article"] (Facebook Newsfeed) - use existing extractPostText
@@ -109,11 +109,11 @@ function isComment(element) {
     if (!current) break;
     
     const ariaLabel = current.getAttribute('aria-label') || '';
+    const ariaLabelLower = ariaLabel.toLowerCase();
     
     // Check for comment indicators in multiple languages
-    if (ariaLabel.includes('Komentarz') || 
-        ariaLabel.includes('Comment') ||
-        ariaLabel.toLowerCase().includes('comment')) {
+    if (ariaLabelLower.includes('comment') || 
+        ariaLabelLower.includes('komentarz')) {
       console.log(`  ⏭️ Comment detected (parent ${i+1} aria-label: "${ariaLabel.substring(0, 50)}...")`);
       return true;
     }
@@ -143,15 +143,14 @@ function findMainPost() {
   }
   
   // Filter by text length
-  const minTextLength = 100;
   const postsWithText = [];
   
   for (const article of articles) {
     const text = extractTextFromElement(article);
     const textLength = text.length;
     
-    if (textLength < minTextLength) {
-      console.log(`⏭️ Skipping: Text too short (${textLength} chars, minimum ${minTextLength})`);
+    if (textLength < MIN_POST_TEXT_LENGTH) {
+      console.log(`⏭️ Skipping: Text too short (${textLength} chars, minimum ${MIN_POST_TEXT_LENGTH})`);
       continue;
     }
     
