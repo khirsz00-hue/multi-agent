@@ -79,71 +79,121 @@ function extractPostText(container) {
   return text;
 }
 
+// Helper function to extract text from different element types
+function extractTextFromElement(element) {
+  if (!element) return '';
+  
+  // For span.fl elements (Facebook Groups)
+  if (element.tagName === 'SPAN') {
+    const text = element.innerText?.trim() || '';
+    
+    // Clean metadata noise (buttons, timestamps, etc.)
+    return text
+      .replace(/\d+ godz\./g, '')
+      .replace(/\d+ min\./g, '')
+      .replace(/Lubię to!|Komentarz|Wyślij|Like|Comment|Share/g, '')
+      .trim();
+  }
+  
+  // For div[role="article"] (Facebook Newsfeed) - use existing extractPostText
+  return extractPostText(element);
+}
+
+// Helper function to check if element is a comment by checking parent aria-labels
+function isComment(element) {
+  let current = element;
+  
+  // Check up to 5 parent levels
+  for (let i = 0; i < 5; i++) {
+    current = current.parentElement;
+    if (!current) break;
+    
+    const ariaLabel = current.getAttribute('aria-label') || '';
+    
+    // Check for comment indicators in multiple languages
+    if (ariaLabel.includes('Komentarz') || 
+        ariaLabel.includes('Comment') ||
+        ariaLabel.toLowerCase().includes('comment')) {
+      console.log(`  ⏭️ Comment detected (parent ${i+1} aria-label: "${ariaLabel.substring(0, 50)}...")`);
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 // Find the main post (not comments)
 function findMainPost() {
   console.log('🔍 Starting main post detection...');
-  const articles = document.querySelectorAll('div[role="article"]');
-  console.log(`🔍 Found ${articles.length} articles (posts + comments)`);
   
-  const validPosts = [];
+  // Try div[role="article"] first (for newsfeed)
+  let articles = document.querySelectorAll('div[role="article"]');
+  console.log(`🔍 Found ${articles.length} div[role="article"]`);
+  
+  // Fallback to span.fl for Facebook groups
+  if (articles.length === 0) {
+    articles = document.querySelectorAll('span.fl');
+    console.log(`🔄 Using span.fl selector (Facebook Groups mode)`);
+    console.log(`🔍 Found ${articles.length} span.fl elements`);
+  }
+  
+  if (articles.length === 0) {
+    console.error('❌ No posts found on page');
+    return null;
+  }
+  
+  // Filter by text length
+  const minTextLength = 100;
+  const postsWithText = [];
   
   for (const article of articles) {
-    // CRITICAL: Filter comments by aria-label
-    const ariaLabel = article.getAttribute('aria-label') || '';
-    const ariaLabelLower = ariaLabel.toLowerCase();
-    
-    // Check for comment markers in both Polish and English
-    if (ariaLabel.includes('Komentarz') || 
-        ariaLabel.includes('Comment') ||
-        ariaLabelLower.includes('comment') ||
-        ariaLabelLower.includes('komentarz')) {
-      console.log(`⏭️ Skipping comment: ${ariaLabel.substring(0, 50)}...`);
-      continue;
-    }
-    
-    // Skip if inside comment section
-    // Check for both "Comment" and "Komentarz" in parent elements
-    const isInCommentSection = article.closest('[aria-label*="Comment"]') || 
-                               article.closest('[aria-label*="Komentarz"]') ||
-                               article.closest('[data-pagelet*="Comment"]');
-    
-    if (isInCommentSection) {
-      console.log('⏭️ Skipping: Inside comment section');
-      continue;
-    }
-    
-    // Extract text
-    const text = extractPostText(article);
+    const text = extractTextFromElement(article);
     const textLength = text.length;
     
-    console.log(`📝 Found valid post candidate: ${textLength} chars, aria-label: "${ariaLabel.substring(0, 50)}..."`);
-    
-    // Must have substantial content (main posts are usually >50 chars)
-    if (textLength < 50) {
-      console.log('⏭️ Skipping: Text too short (main posts usually >50 chars)');
+    if (textLength < minTextLength) {
+      console.log(`⏭️ Skipping: Text too short (${textLength} chars, minimum ${minTextLength})`);
       continue;
     }
     
-    validPosts.push({
+    postsWithText.push({
       element: article,
       text: text,
-      textLength: textLength,
-      ariaLabel: ariaLabel
+      textLength: textLength
     });
   }
   
-  console.log(`✅ Found ${validPosts.length} valid post candidates`);
+  console.log(`✅ Found ${postsWithText.length} elements with sufficient text`);
   
-  if (validPosts.length === 0) {
-    console.error('❌ No valid posts found. Make sure you are on a Facebook post or group feed.');
+  if (postsWithText.length === 0) {
+    console.error('❌ No elements with sufficient text found');
+    return null;
+  }
+  
+  // Filter out comments by checking parent aria-labels
+  const nonComments = postsWithText.filter(post => {
+    const isCommentPost = isComment(post.element);
+    
+    if (isCommentPost) {
+      console.log(`⏭️ Skipping comment: ${post.text.substring(0, 50)}...`);
+      return false;
+    }
+    
+    return true;
+  });
+  
+  console.log(`✅ Found ${nonComments.length} non-comment posts`);
+  
+  if (nonComments.length === 0) {
+    console.error('❌ No valid main posts found after filtering');
     return null;
   }
   
   // Sort by text length (longest = main post)
-  validPosts.sort((a, b) => b.textLength - a.textLength);
+  nonComments.sort((a, b) => b.textLength - a.textLength);
   
-  const mainPost = validPosts[0];
-  console.log(`🎯 Selected main post: ${mainPost.textLength} chars`);
+  const mainPost = nonComments[0];
+  
+  console.log(`🎯 Selected main post (${mainPost.textLength} chars)`);
   console.log(`📄 Preview: ${mainPost.text.substring(0, 100)}...`);
   
   return mainPost.element;
