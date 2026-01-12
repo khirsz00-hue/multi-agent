@@ -30,7 +30,7 @@ const TEXT_SELECTORS = [
 // Configuration constants
 const MIN_POST_TEXT_LENGTH = 100; // Minimum chars for valid main post
 const MAX_PARENT_LEVELS = 5; // Max parent levels to check for comment detection
-const METADATA_PATTERNS = /\d+ godz\.|\d+ min\.|Lubię to!|Komentarz|Wyślij|Like|Comment|Share/g;
+const METADATA_PATTERNS = /\d+ godz\.|\d+ min\.|\d+ d\.|Lubię to!|Komentarz|Wyślij|Like|Comment|Share|Zobacz więcej|See more|\d+ reactions?|\d+ comments?/gi;
 
 // Retry mechanism with exponential backoff
 async function waitForElement(selectors, timeout = 5000, retries = 5) {
@@ -88,11 +88,11 @@ function extractPostText(container) {
 function extractTextFromElement(element) {
   if (!element) return '';
   
-  // For span.fl elements (Facebook Groups)
-  if (element.tagName === 'SPAN') {
+  // For span[class^="f"] elements (Facebook Groups - dynamic class names)
+  if (element.tagName === 'SPAN' && element.className && element.className.match(/^f/)) {
     const text = element.innerText?.trim() || '';
     
-    // Clean metadata noise (buttons, timestamps, etc.)
+    // Clean metadata noise (buttons, timestamps, reactions)
     return text.replace(METADATA_PATTERNS, '').trim();
   }
   
@@ -132,11 +132,11 @@ function findMainPost() {
   let articles = document.querySelectorAll('div[role="article"]');
   console.log(`🔍 Found ${articles.length} div[role="article"]`);
   
-  // Fallback to span.fl for Facebook groups
+  // Fallback to span[class^="f"] for Facebook groups (dynamic class names)
   if (articles.length === 0) {
-    articles = document.querySelectorAll('span.fl');
-    console.log(`🔄 Using span.fl selector (Facebook Groups mode)`);
-    console.log(`🔍 Found ${articles.length} span.fl elements`);
+    articles = document.querySelectorAll('span[class^="f"]');
+    console.log(`🔄 Using span[class^="f"] selector (Facebook Groups mode)`);
+    console.log(`🔍 Found ${articles.length} span elements with dynamic "f*" classes`);
   }
   
   if (articles.length === 0) {
