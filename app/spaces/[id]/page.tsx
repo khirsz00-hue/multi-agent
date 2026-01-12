@@ -20,6 +20,7 @@ export default function SpaceDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showAgentBuilder, setShowAgentBuilder] = useState(false)
   const [setupLoading, setSetupLoading] = useState(false)
+  const [setupMessage, setSetupMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function SpaceDetailPage() {
 
   const handleSetupAllAgents = async () => {
     setSetupLoading(true)
+    setSetupMessage(null)
     try {
       const res = await fetch('/api/setup-agents', {
         method: 'POST',
@@ -88,10 +90,13 @@ export default function SpaceDetailPage() {
       }
       
       await loadSpaceData()
-      alert('✅ All agents created! Check the Dashboard.')
+      setSetupMessage({ type: 'success', text: '✅ All agents created! Check the Dashboard.' })
+      
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => setSetupMessage(null), 5000)
     } catch (error: any) {
       console.error('Setup error:', error)
-      alert(`Error: ${error.message}`)
+      setSetupMessage({ type: 'error', text: `Error: ${error.message}` })
     } finally {
       setSetupLoading(false)
     }
@@ -155,6 +160,17 @@ export default function SpaceDetailPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Setup Message */}
+        {setupMessage && (
+          <div className={`mb-6 p-4 rounded-lg border ${
+            setupMessage.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-900' 
+              : 'bg-red-50 border-red-200 text-red-900'
+          }`}>
+            {setupMessage.text}
+          </div>
+        )}
+
         {/* Setup banner - only show if agents exist but none have roles */}
         {agents.length > 0 && !agents.some(a => a.role) && (
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">

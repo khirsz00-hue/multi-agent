@@ -128,14 +128,16 @@ export function AgentBuilder({
               <SelectContent>
                 {AGENT_ROLES.map(r => (
                   <SelectItem key={r.value} value={r.value}>
-                    <div>
-                      <div className="font-medium">{r.label}</div>
-                      <div className="text-xs text-gray-500">{r.description}</div>
-                    </div>
+                    {r.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {role && (
+              <p className="text-xs text-muted-foreground">
+                {AGENT_ROLES.find(r => r.value === role)?.description}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
