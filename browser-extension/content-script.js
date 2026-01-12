@@ -29,6 +29,7 @@ const TEXT_SELECTORS = [
 
 // Configuration constants
 const MIN_POST_TEXT_LENGTH = 100; // Minimum chars for valid main post
+const MAX_PARENT_LEVELS = 5; // Max parent levels to check for comment detection
 const METADATA_PATTERNS = /\d+ godz\.|\d+ min\.|Lubię to!|Komentarz|Wyślij|Like|Comment|Share/g;
 
 // Retry mechanism with exponential backoff
@@ -103,9 +104,8 @@ function extractTextFromElement(element) {
 function isComment(element) {
   let current = element;
   
-  // Check up to 5 parent levels
-  for (let i = 0; i < 5; i++) {
-    current = current.parentElement;
+  // Check up to MAX_PARENT_LEVELS parent levels
+  for (let i = 0; i < MAX_PARENT_LEVELS; i++) {
     if (!current) break;
     
     const ariaLabel = current.getAttribute('aria-label') || '';
@@ -114,9 +114,11 @@ function isComment(element) {
     // Check for comment indicators in multiple languages
     if (ariaLabelLower.includes('comment') || 
         ariaLabelLower.includes('komentarz')) {
-      console.log(`  ⏭️ Comment detected (parent ${i+1} aria-label: "${ariaLabel.substring(0, 50)}...")`);
+      console.log(`  ⏭️ Comment detected (level ${i+1} aria-label: "${ariaLabel.substring(0, 50)}...")`);
       return true;
     }
+    
+    current = current.parentElement;
   }
   
   return false;
