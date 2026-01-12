@@ -205,77 +205,150 @@ function extractComments(postContainer) {
   const comments = [];
   console.log('💬 Starting comment extraction...');
   
-  // Find comment section
-  const commentSection = document.querySelector('[aria-label*="omment"]') ||
-                        document.querySelector('[aria-label*="Comment"]') ||
-                        postContainer.parentElement?.querySelector('[data-pagelet*="Comment"]');
+  // Check if we're using span[class^="f"] mode (Facebook Groups)
+  const isSpanMode = postContainer.tagName === 'SPAN' && postContainer.className && postContainer.className.match(/^f/);
   
-  if (!commentSection) {
-    console.log('ℹ️ No comment section found');
-    return comments;
+  if (isSpanMode) {
+    // Facebook Groups mode: search ALL spans for comments
+    console.log('🔍 Facebook Groups mode: Searching ALL spans for comments');
+    
+    const allSpans = document.querySelectorAll('span[class^="f"]');
+    console.log(`🔍 Found ${allSpans.length} total span elements`);
+    
+    // Get main post index
+    const mainPostIndex = Array.from(allSpans).indexOf(postContainer);
+    console.log(`🎯 Main post at index: ${mainPostIndex}`);
+    
+    // Search in ALL spans (not just after main post)
+    for (let i = 0; i < allSpans.length; i++) {
+      // Skip the main post itself
+      if (i === mainPostIndex) {
+        console.log(`⏭️ Skipping main post at index ${i}`);
+        continue;
+      }
+      
+      const span = allSpans[i];
+      const text = span.innerText?.trim() || '';
+      
+      // Check minimum text length
+      if (text.length < 10 || text.length > 3000) {
+        continue;
+      }
+      
+      // Check if it's a comment by looking at parent aria-labels
+      if (isComment(span)) {
+        console.log(`✅ Comment detected at index ${i}: "${text.substring(0, 50)}..."`);
+        
+        // Extract author from parent aria-label
+        let author = 'Unknown';
+        let current = span;
+        for (let j = 0; j < MAX_PARENT_LEVELS; j++) {
+          current = current.parentElement;
+          if (!current) break;
+          
+          const ariaLabel = current.getAttribute('aria-label') || '';
+          // Extract author name from aria-label (format: "Komentarz <Author Name>: ...")
+          const authorMatch = ariaLabel.match(/(?:Komentarz|Comment)\s+([^:]+):/i);
+          if (authorMatch) {
+            author = authorMatch[1].trim();
+            break;
+          }
+        }
+        
+        comments.push({
+          text,
+          author,
+          likes: 0,
+          replies: 0,
+          engagementScore: 0,
+          position: i,
+          index: i
+        });
+      }
+    }
+    
+    // Sort comments by DOM order (index)
+    comments.sort((a, b) => a.index - b.index);
+    
+    console.log(`✅ Found ${comments.length} total comments (before and after main post)`);
+    
+  } else {
+    // Regular mode: use existing logic for div[role="article"]
+    console.log('🔍 Regular mode: Searching comment section');
+    
+    // Find comment section
+    const commentSection = document.querySelector('[aria-label*="omment"]') ||
+                          document.querySelector('[aria-label*="Comment"]') ||
+                          postContainer.parentElement?.querySelector('[data-pagelet*="Comment"]');
+    
+    if (!commentSection) {
+      console.log('ℹ️ No comment section found');
+      return comments;
+    }
+    
+    // Find all comment articles within the comment section
+    const commentArticles = commentSection.querySelectorAll('div[role="article"]');
+    console.log(`Found ${commentArticles.length} potential comments`);
+    
+    commentArticles.forEach((article, index) => {
+      try {
+        // Extract comment text
+        const textElement = article.querySelector('div[dir="auto"]');
+        const text = textElement ? textElement.textContent.trim() : '';
+        
+        if (text.length < 10) return; // Skip very short comments
+        
+        // Extract author
+        const authorElement = article.querySelector('a[role="link"] span, strong');
+        const author = authorElement ? authorElement.textContent.trim() : 'Unknown';
+        
+        // Extract likes
+        let likes = 0;
+        const likeElements = article.querySelectorAll('[aria-label*="reakcj"], [aria-label*="reakcje"], [aria-label*="Like"], [aria-label*="like"]');
+        likeElements.forEach(el => {
+          const ariaLabel = el.getAttribute('aria-label');
+          if (ariaLabel) {
+            const match = ariaLabel.match(/(\d+)/);
+            if (match) likes = Math.max(likes, parseInt(match[1]));
+          }
+        });
+        
+        // Extract reply count
+        let replies = 0;
+        const replyElements = article.querySelectorAll('[aria-label*="odpowied"], [aria-label*="odpowiedzi"], [aria-label*="repl"], [aria-label*="Repl"]');
+        replyElements.forEach(el => {
+          const ariaLabel = el.getAttribute('aria-label');
+          if (ariaLabel) {
+            const match = ariaLabel.match(/(\d+)/);
+            if (match) replies = Math.max(replies, parseInt(match[1]));
+          }
+        });
+        
+        // Calculate engagement score (likes weighted 2x, replies weighted 1x)
+        const LIKE_WEIGHT = 2;
+        const REPLY_WEIGHT = 1;
+        const engagementScore = (likes * LIKE_WEIGHT) + (replies * REPLY_WEIGHT);
+        
+        comments.push({
+          text,
+          author,
+          likes,
+          replies,
+          engagementScore,
+          position: index + 1
+        });
+        
+      } catch (error) {
+        console.error('Error extracting comment:', error);
+      }
+    });
+    
+    // Sort by engagement score (highest first)
+    comments.sort((a, b) => b.engagementScore - a.engagementScore);
+    
+    console.log(`✅ Extracted ${comments.length} comments`);
   }
   
-  // Find all comment articles within the comment section
-  const commentArticles = commentSection.querySelectorAll('div[role="article"]');
-  console.log(`Found ${commentArticles.length} potential comments`);
-  
-  commentArticles.forEach((article, index) => {
-    try {
-      // Extract comment text
-      const textElement = article.querySelector('div[dir="auto"]');
-      const text = textElement ? textElement.textContent.trim() : '';
-      
-      if (text.length < 10) return; // Skip very short comments
-      
-      // Extract author
-      const authorElement = article.querySelector('a[role="link"] span, strong');
-      const author = authorElement ? authorElement.textContent.trim() : 'Unknown';
-      
-      // Extract likes
-      let likes = 0;
-      const likeElements = article.querySelectorAll('[aria-label*="reakcj"], [aria-label*="reakcje"], [aria-label*="Like"], [aria-label*="like"]');
-      likeElements.forEach(el => {
-        const ariaLabel = el.getAttribute('aria-label');
-        if (ariaLabel) {
-          const match = ariaLabel.match(/(\d+)/);
-          if (match) likes = Math.max(likes, parseInt(match[1]));
-        }
-      });
-      
-      // Extract reply count
-      let replies = 0;
-      const replyElements = article.querySelectorAll('[aria-label*="odpowied"], [aria-label*="odpowiedzi"], [aria-label*="repl"], [aria-label*="Repl"]');
-      replyElements.forEach(el => {
-        const ariaLabel = el.getAttribute('aria-label');
-        if (ariaLabel) {
-          const match = ariaLabel.match(/(\d+)/);
-          if (match) replies = Math.max(replies, parseInt(match[1]));
-        }
-      });
-      
-      // Calculate engagement score (likes weighted 2x, replies weighted 1x)
-      const LIKE_WEIGHT = 2;
-      const REPLY_WEIGHT = 1;
-      const engagementScore = (likes * LIKE_WEIGHT) + (replies * REPLY_WEIGHT);
-      
-      comments.push({
-        text,
-        author,
-        likes,
-        replies,
-        engagementScore,
-        position: index + 1
-      });
-      
-    } catch (error) {
-      console.error('Error extracting comment:', error);
-    }
-  });
-  
-  // Sort by engagement score (highest first)
-  comments.sort((a, b) => b.engagementScore - a.engagementScore);
-  
-  console.log(`✅ Extracted ${comments.length} comments`);
   return comments;
 }
 
