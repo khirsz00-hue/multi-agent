@@ -9,7 +9,7 @@ import { ChatInterface } from '@/components/ChatInterface'
 import { FileUploader } from '@/components/FileUploader'
 import { Agent, File as AgentFile, Conversation } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, Settings, Trash2 } from 'lucide-react'
+import { ArrowLeft, Settings, Trash2, BarChart3, Loader2 } from 'lucide-react'
 
 interface PainPoint {
   id: string
@@ -150,7 +150,7 @@ export default function AgentPage() {
       const data = await res.json()
       
       if (res.ok) {
-        alert(`✅ Analysis complete! Found ${data.insights || 0} pain points`)
+        alert(`✅ Analysis complete! Found ${data.pain_points?.length || 0} pain points from ${data.posts_analyzed || 0} posts`)
         // Reload pain points after analysis
         await loadPainPoints()
       } else {
@@ -277,11 +277,12 @@ export default function AgentPage() {
                   >
                     {analyzing ? (
                       <>
-                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Analyzing...
                       </>
                     ) : (
                       <>
+                        <BarChart3 className="h-4 w-4 mr-2" />
                         📊 Analyze Notion Posts
                       </>
                     )}
