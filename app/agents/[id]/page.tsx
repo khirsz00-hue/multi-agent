@@ -261,7 +261,7 @@ export default function AgentPage() {
             </Card>
 
             {/* Audience Insights Actions */}
-            {agent.role === 'audience_insights' && (
+            {agent?.role === 'audience_insights' && (
               <Card>
                 <CardHeader>
                   <CardTitle>Notion Analysis</CardTitle>
@@ -293,8 +293,8 @@ export default function AgentPage() {
                         Found Pain Points: {painPoints.length}
                       </h4>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {painPoints.slice(0, 5).map((pp, idx) => (
-                          <div key={idx} className="p-2 bg-gray-50 rounded text-xs">
+                        {painPoints.slice(0, 5).map((pp) => (
+                          <div key={pp.id} className="p-2 bg-gray-50 rounded text-xs">
                             <div className="font-medium">{pp.pain_point}</div>
                             <div className="text-gray-500 mt-1">
                               Category: {pp.category} • Frequency: {pp.frequency}
@@ -307,7 +307,7 @@ export default function AgentPage() {
                           +{painPoints.length - 5} more in dashboard
                         </p>
                       )}
-                      {agent.space_id && (
+                      {agent?.space_id && (
                         <Link href={`/spaces/${agent.space_id}/dashboard`}>
                           <Button variant="outline" className="w-full mt-2" size="sm">
                             View in Dashboard →
