@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { ChatInterface } from '@/components/ChatInterface'
 import { FileUploader } from '@/components/FileUploader'
 import { Agent, File as AgentFile, Conversation } from '@/lib/types'
@@ -19,13 +20,23 @@ export default function AgentPage() {
   const [conversation, setConversation] = useState<Conversation | null>(null)
   const [files, setFiles] = useState<AgentFile[]>([])
   const [loading, setLoading] = useState(true)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [painPoints, setPainPoints] = useState<any[]>([])
   const supabase = createClient()
 
   useEffect(() => {
     if (agentId) {
       loadAgentData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId])
+
+  useEffect(() => {
+    if (agent?.role === 'audience_insights') {
+      loadPainPoints()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agent?.role, agent?.id])
 
   const loadAgentData = async () => {
     try {
@@ -111,6 +122,55 @@ export default function AgentPage() {
     }
   }
 
+  const handleAnalyzeNotion = async () => {
+    setAnalyzing(true)
+    try {
+      const res = await fetch('/api/agents/audience-insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: agent?.id,
+          action: 'analyze_notion_posts'
+        })
+      })
+      
+      const data = await res.json()
+      
+      if (res.ok) {
+        setPainPoints(data.pain_points || [])
+        alert(`✅ Analysis complete! Found ${data.insights || 0} pain points`)
+        // Reload pain points after analysis
+        await loadPainPoints()
+      } else {
+        throw new Error(data.error || 'Failed to analyze')
+      }
+    } catch (error: any) {
+      console.error('Analysis error:', error)
+      alert(`❌ Analysis failed: ${error.message}`)
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  const loadPainPoints = async () => {
+    if (agent?.role !== 'audience_insights') return
+    
+    try {
+      const res = await fetch('/api/agents/audience-insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: agent.id,
+          action: 'get_top_pain_points'
+        })
+      })
+      const data = await res.json()
+      setPainPoints(data.pain_points || [])
+    } catch (error) {
+      console.error('Error loading pain points:', error)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -187,6 +247,72 @@ export default function AgentPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Audience Insights Actions */}
+            {agent.role === 'audience_insights' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notion Analysis</CardTitle>
+                  <CardDescription>
+                    Extract pain points from Notion database
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button 
+                    onClick={handleAnalyzeNotion}
+                    disabled={analyzing}
+                    className="w-full"
+                  >
+                    {analyzing ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        📊 Analyze Notion Posts
+                      </>
+                    )}
+                  </Button>
+                  
+                  {painPoints.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">
+                        Found Pain Points: {painPoints.length}
+                      </h4>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {painPoints.slice(0, 5).map((pp, idx) => (
+                          <div key={idx} className="p-2 bg-gray-50 rounded text-xs">
+                            <div className="font-medium">{pp.pain_point}</div>
+                            <div className="text-gray-500 mt-1">
+                              Category: {pp.category} • Frequency: {pp.frequency}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {painPoints.length > 5 && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          +{painPoints.length - 5} more in dashboard
+                        </p>
+                      )}
+                      {agent.space_id && (
+                        <Link href={`/spaces/${agent.space_id}/dashboard`}>
+                          <Button variant="outline" className="w-full mt-2" size="sm">
+                            View in Dashboard →
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                  
+                  {painPoints.length === 0 && !analyzing && (
+                    <p className="text-xs text-gray-500">
+                      No pain points yet. Click the button above to analyze your Notion posts.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>
