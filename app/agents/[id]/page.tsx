@@ -5,12 +5,25 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { ChatInterface } from '@/components/ChatInterface'
 import { FileUploader } from '@/components/FileUploader'
 import { Agent, File as AgentFile, Conversation } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Settings, Trash2 } from 'lucide-react'
+
+interface PainPoint {
+  id: string
+  agent_id: string
+  source: string
+  source_id?: string
+  pain_point: string
+  category?: string
+  frequency: number
+  sentiment?: string
+  raw_content?: string
+  metadata?: any
+  created_at: string
+}
 
 export default function AgentPage() {
   const params = useParams()
@@ -21,7 +34,7 @@ export default function AgentPage() {
   const [files, setFiles] = useState<AgentFile[]>([])
   const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
-  const [painPoints, setPainPoints] = useState<any[]>([])
+  const [painPoints, setPainPoints] = useState<PainPoint[]>([])
   const supabase = createClient()
 
   useEffect(() => {
@@ -137,7 +150,6 @@ export default function AgentPage() {
       const data = await res.json()
       
       if (res.ok) {
-        setPainPoints(data.pain_points || [])
         alert(`✅ Analysis complete! Found ${data.insights || 0} pain points`)
         // Reload pain points after analysis
         await loadPainPoints()
