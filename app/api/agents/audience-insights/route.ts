@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
 async function analyzeNotionPosts(agentId: string, data: any, supabase: any) {
   const notionApiKey = process.env.NOTION_API_KEY
-  const notionDbId = data.notionDatabaseId || process.env.NOTION_DATABASE_ID
+  const notionDbId = data?.notionDatabaseId || process.env.NOTION_DATABASE_ID
   
   if (!notionApiKey) {
     throw new Error('Notion API key not configured')
@@ -146,8 +146,9 @@ Zidentyfikuj 10-15 najważniejszych pain pointów.`
   
   return NextResponse.json({
     success: true,
-    analyzed: posts.length,
-    insights: painPoints.length
+    pain_points: painPoints,
+    posts_analyzed: posts.length,
+    message: `Analyzed ${posts.length} posts and found ${painPoints.length} pain points`
   })
 }
 
