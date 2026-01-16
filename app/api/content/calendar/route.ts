@@ -94,6 +94,17 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
+    // Verify user owns this draft through agent/space relationship
+    const { data: draft } = await supabase
+      .from('content_drafts')
+      .select('*, agents!inner(*, spaces!inner(user_id))')
+      .eq('id', draftId)
+      .single()
+    
+    if (!draft || draft.agents.spaces.user_id !== user.id) {
+      return NextResponse.json({ error: 'Draft not found or unauthorized' }, { status: 404 })
+    }
+    
     const { error } = await supabase
       .from('content_drafts')
       .delete()

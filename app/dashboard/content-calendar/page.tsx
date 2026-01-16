@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -150,7 +150,7 @@ export default function ContentCalendarPage() {
                 {draft.scheduled_date && (
                   <div className="flex items-center gap-1 mt-2 text-xs text-blue-600">
                     <Calendar className="h-3 w-3" />
-                    {new Date(draft.scheduled_date).toLocaleDateString('pl-PL', {
+                    {new Date(draft.scheduled_date).toLocaleDateString(undefined, {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',
@@ -213,6 +213,17 @@ export default function ContentCalendarPage() {
     )
   }
   
+  const totalDrafts = useMemo(() => {
+    if (!calendar) return 0
+    return [...(calendar.drafts || []), ...(calendar.ready || []), ...(calendar.scheduled || []), ...(calendar.posted || [])].length
+  }, [calendar])
+  
+  const allDrafts = useMemo(() => {
+    if (!calendar) return []
+    return [...(calendar.drafts || []), ...(calendar.ready || []), ...(calendar.scheduled || []), ...(calendar.posted || [])]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [calendar])
+  
   if (loading) {
     return (
       <div className="p-8 max-w-7xl mx-auto">
@@ -225,10 +236,6 @@ export default function ContentCalendarPage() {
       </div>
     )
   }
-  
-  const totalDrafts = calendar ? 
-    [...(calendar.drafts || []), ...(calendar.ready || []), ...(calendar.scheduled || []), ...(calendar.posted || [])].length 
-    : 0
   
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -330,11 +337,9 @@ export default function ContentCalendarPage() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...(calendar?.drafts || []), ...(calendar?.ready || []), ...(calendar?.scheduled || []), ...(calendar?.posted || [])]
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                .map((draft: any) => (
-                  <ContentCard key={draft.id} draft={draft} />
-                ))}
+              {allDrafts.map((draft: any) => (
+                <ContentCard key={draft.id} draft={draft} />
+              ))}
             </div>
           )}
         </TabsContent>

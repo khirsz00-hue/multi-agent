@@ -177,7 +177,7 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                                   </div>
                                   <p className="text-sm text-gray-600">{rec.reasoning}</p>
                                   <p className="text-xs text-gray-500 mt-1 italic">
-                                    &quot;{rec.hook_suggestion}&quot;
+                                    &ldquo;{rec.hook_suggestion}&rdquo;
                                   </p>
                                 </div>
                               </div>
