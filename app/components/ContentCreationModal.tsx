@@ -186,7 +186,7 @@ export function ContentCreationModal({
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="humorous" id="humorous" />
                     <Label htmlFor="humorous" className="font-normal cursor-pointer">
-                      😄 Humorous (mem-like, lighthearted)
+                      😄 Humorous (meme-like, lighthearted)
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
