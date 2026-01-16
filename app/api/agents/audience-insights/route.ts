@@ -59,7 +59,7 @@ async function analyzeNotionPosts(agentId: string, data: any, supabase: any) {
   const posts = []
   for (const page of response.results) {
     const props = page.properties
-    const content = props['Treść']?.rich_text?.[0]?.text?.content || ''
+    const content = props['Treść Posta']?.rich_text?.[0]?.text?.content || ''
     const comments = props['Komentarze']?.rich_text?.[0]?.text?.content || ''
     
     if (content) {
