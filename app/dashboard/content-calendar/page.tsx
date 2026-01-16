@@ -215,7 +215,8 @@ export default function ContentCalendarPage() {
   
   const totalDrafts = useMemo(() => {
     if (!calendar) return 0
-    return [...(calendar.drafts || []), ...(calendar.ready || []), ...(calendar.scheduled || []), ...(calendar.posted || [])].length
+    return (calendar.drafts?.length || 0) + (calendar.ready?.length || 0) + 
+           (calendar.scheduled?.length || 0) + (calendar.posted?.length || 0)
   }, [calendar])
   
   const allDrafts = useMemo(() => {
