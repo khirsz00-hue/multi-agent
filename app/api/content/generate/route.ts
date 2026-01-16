@@ -68,16 +68,38 @@ async function generateContent({ painPoint, contentType, options, brandSettings 
   const systemPrompt = buildSystemPrompt(contentType, brandSettings)
   const userPrompt = buildUserPrompt(painPoint, options)
   
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4-turbo',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ],
-    response_format: { type: 'json_object' }
-  })
-  
-  return JSON.parse(completion.choices[0].message.content || '{}')
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      response_format: { type: 'json_object' }
+    })
+    
+    const content = completion.choices[0]?.message?.content
+    if (!content) {
+      throw new Error('No content generated from OpenAI')
+    }
+    
+    const parsed = JSON.parse(content)
+    
+    // Validate required fields exist
+    if (!parsed.hook && !parsed.body) {
+      throw new Error('Generated content missing required fields')
+    }
+    
+    return parsed
+  } catch (error: any) {
+    console.error('OpenAI generation error:', error)
+    if (error.code === 'rate_limit_exceeded') {
+      throw new Error('Rate limit exceeded. Please try again later.')
+    } else if (error instanceof SyntaxError) {
+      throw new Error('Invalid response format from AI')
+    }
+    throw error
+  }
 }
 
 function buildSystemPrompt(contentType: string, brandSettings: any): string {
