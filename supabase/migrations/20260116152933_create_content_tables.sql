@@ -1,6 +1,6 @@
 -- Content drafts table for AI-generated content
 CREATE TABLE IF NOT EXISTS public.content_drafts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   pain_point_id UUID REFERENCES audience_insights(id) ON DELETE SET NULL,
   
@@ -38,7 +38,7 @@ CREATE INDEX idx_content_drafts_type ON content_drafts(content_type);
 
 -- Brand settings table
 CREATE TABLE IF NOT EXISTS public.brand_settings (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   space_id UUID NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
   
   -- Brand voice
