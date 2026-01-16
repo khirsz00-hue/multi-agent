@@ -111,7 +111,7 @@ async function analyzeNotionPosts(agentId: string, data: any, supabase: any) {
   
   if (posts.length === 0) {
     // ADD DEBUG LOG 6 - Enhanced error
-    console.error('[Notion Debug] No posts extracted! Check property names and types.')
+    console.error('[Notion Debug] No posts extracted! Check property names and types. Expected properties: "Treść Posta", "Komentarze"')
     return NextResponse.json({ 
       error: 'No posts found in Notion database. Check server logs for details.',
       debug: {
