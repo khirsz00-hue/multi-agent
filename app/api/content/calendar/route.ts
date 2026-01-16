@@ -77,3 +77,44 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const draftId = searchParams.get('id')
+    
+    if (!draftId) {
+      return NextResponse.json({ error: 'Draft ID required' }, { status: 400 })
+    }
+    
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
+    // Verify user owns this draft through agent/space relationship
+    const { data: draft } = await supabase
+      .from('content_drafts')
+      .select('*, agents!inner(*, spaces!inner(user_id))')
+      .eq('id', draftId)
+      .single()
+    
+    if (!draft || draft.agents.spaces.user_id !== user.id) {
+      return NextResponse.json({ error: 'Draft not found or unauthorized' }, { status: 404 })
+    }
+    
+    const { error } = await supabase
+      .from('content_drafts')
+      .delete()
+      .eq('id', draftId)
+    
+    if (error) throw error
+    
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Delete draft error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}

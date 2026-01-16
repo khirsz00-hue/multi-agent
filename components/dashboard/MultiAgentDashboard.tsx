@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Target, Users, Calendar, Zap, TrendingUp, Copy, Check } from 'lucide-react'
+import Link from 'next/link'
 
 interface MultiAgentDashboardProps {
   spaceId: string
@@ -156,9 +157,17 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Multi-Agent Marketing Dashboard</h1>
-        <Button onClick={loadDashboard} variant="outline" size="sm">
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Link href="/dashboard/content-calendar">
+            <Button variant="outline">
+              <Calendar className="h-4 w-4 mr-2" />
+              Content Calendar
+            </Button>
+          </Link>
+          <Button onClick={loadDashboard} variant="outline" size="sm">
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* KPI Progress */}
