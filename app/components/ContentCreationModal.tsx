@@ -190,7 +190,7 @@ export function ContentCreationModal({
                     <Label htmlFor="humorous" className="font-normal cursor-pointer flex-1">
                       <span className="font-medium">😄 Humorous</span>
                       <span className="text-xs text-gray-600 block">
-                        Lighthearted, mem-like, relatable
+                        Lighthearted, meme-like, relatable
                       </span>
                     </Label>
                   </div>
