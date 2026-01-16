@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Users, RefreshCw, Sparkles } from 'lucide-react'
 import ContentCreationModal from '@/components/ContentCreationModal'
+import { Users, RefreshCw } from 'lucide-react'
+import { PainPointCard } from '@/app/components/PainPointCard'
 
 export default function AudienceInsights({ agentId }: { agentId: string }) {
   const [insights, setInsights] = useState<any[]>([])
@@ -118,6 +120,8 @@ export default function AudienceInsights({ agentId }: { agentId: string }) {
                 </div>
               </CardContent>
             </Card>
+          {insights.map((insight) => (
+            <PainPointCard key={insight.id} painPoint={insight} />
           ))}
         </div>
       )}
