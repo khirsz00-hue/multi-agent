@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Target, Users, Calendar, Zap, TrendingUp, Copy, Check } from 'lucide-react'
+import { PainPointCard } from '@/app/components/PainPointCard'
 
 interface MultiAgentDashboardProps {
   spaceId: string
@@ -265,15 +266,9 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
           </CardHeader>
           <CardContent>
             {painPoints.length > 0 ? (
-              <div className="space-y-2">
-                {painPoints.map((pp, idx) => (
-                  <div key={pp.id} className="flex items-center justify-between p-2 border rounded">
-                    <div>
-                      <span className="font-medium">{idx + 1}. {pp.pain_point}</span>
-                      <Badge variant="outline" className="ml-2">{pp.category}</Badge>
-                    </div>
-                    <span className="font-bold">{pp.frequency}x</span>
-                  </div>
+              <div className="space-y-3">
+                {painPoints.map((pp) => (
+                  <PainPointCard key={pp.id} painPoint={pp} />
                 ))}
               </div>
             ) : (
