@@ -17,9 +17,9 @@ interface PainPointCardProps {
   painPoint: {
     id: string
     pain_point: string
-    category: string
+    category?: string
     frequency: number
-    sentiment: string
+    sentiment?: string
     raw_content?: string
   }
 }
@@ -48,9 +48,13 @@ export function PainPointCard({ painPoint }: PainPointCardProps) {
       <div className="mb-3">
         <p className="font-medium text-sm text-gray-900">{painPoint.pain_point}</p>
         <div className="flex gap-2 mt-2 text-xs text-gray-600">
-          <span className="px-2 py-1 bg-gray-100 rounded">{painPoint.category}</span>
+          {painPoint.category && (
+            <span className="px-2 py-1 bg-gray-100 rounded">{painPoint.category}</span>
+          )}
           <span>Frequency: {painPoint.frequency}</span>
-          <span className="capitalize">{painPoint.sentiment}</span>
+          {painPoint.sentiment && (
+            <span className="capitalize">{painPoint.sentiment}</span>
+          )}
         </div>
       </div>
       

@@ -10,6 +10,7 @@ import { FileUploader } from '@/components/FileUploader'
 import { Agent, File as AgentFile, Conversation } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Settings, Trash2, BarChart3, Loader2 } from 'lucide-react'
+import { PainPointCard } from '@/app/components/PainPointCard'
 
 interface PainPoint {
   id: string
@@ -290,28 +291,18 @@ export default function AgentPage() {
                   
                   {painPoints.length > 0 && (
                     <div className="mt-4">
-                      <h4 className="text-sm font-medium mb-2">
+                      <h4 className="text-sm font-medium mb-3">
                         Found Pain Points: {painPoints.length}
                       </h4>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {painPoints.slice(0, 5).map((pp) => (
-                          <div key={pp.id} className="p-2 bg-gray-50 rounded text-xs">
-                            <div className="font-medium">{pp.pain_point}</div>
-                            <div className="text-gray-500 mt-1">
-                              Category: {pp.category} • Frequency: {pp.frequency}
-                            </div>
-                          </div>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {painPoints.map((pp) => (
+                          <PainPointCard key={pp.id} painPoint={pp} />
                         ))}
                       </div>
-                      {painPoints.length > 5 && (
-                        <p className="text-xs text-gray-500 mt-2">
-                          +{painPoints.length - 5} more in dashboard
-                        </p>
-                      )}
                       {agent?.space_id && (
                         <Link href={`/spaces/${agent.space_id}/dashboard`}>
-                          <Button variant="outline" className="w-full mt-2" size="sm">
-                            View in Dashboard →
+                          <Button variant="outline" className="w-full mt-3" size="sm">
+                            View Full Dashboard →
                           </Button>
                         </Link>
                       )}

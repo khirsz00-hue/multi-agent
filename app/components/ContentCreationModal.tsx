@@ -19,9 +19,9 @@ interface ContentCreationModalProps {
   painPoint: {
     id: string
     pain_point: string
-    category: string
+    category?: string
     frequency: number
-    sentiment: string
+    sentiment?: string
     raw_content?: string
   }
   contentType: string
@@ -142,9 +142,13 @@ export function ContentCreationModal({
             <p className="text-sm font-medium text-gray-700">Pain Point:</p>
             <p className="text-sm mt-1 text-gray-900">&quot;{painPoint.pain_point}&quot;</p>
             <div className="flex gap-2 mt-2 text-xs text-gray-600">
-              <span className="px-2 py-0.5 bg-white rounded border">{painPoint.category}</span>
+              {painPoint.category && (
+                <span className="px-2 py-0.5 bg-white rounded border">{painPoint.category}</span>
+              )}
               <span>Frequency: {painPoint.frequency}</span>
-              <span className="capitalize">{painPoint.sentiment}</span>
+              {painPoint.sentiment && (
+                <span className="capitalize">{painPoint.sentiment}</span>
+              )}
             </div>
           </div>
           
