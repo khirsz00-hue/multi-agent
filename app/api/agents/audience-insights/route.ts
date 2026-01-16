@@ -80,7 +80,7 @@ async function analyzeNotionPosts(agentId: string, data: any, supabase: any) {
       )
     }
     
-    const content = props['Treść Posta']?.rich_text?.[0]?.text?.content || ''
+    const content = props['Treść Posta']?.title?.[0]?.text?.content || ''
     const comments = props['Komentarze']?.rich_text?.[0]?.text?.content || ''
     
     // ADD DEBUG LOG 4
