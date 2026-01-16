@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Users, RefreshCw } from 'lucide-react'
+import { Users, RefreshCw, Sparkles } from 'lucide-react'
+import ContentCreationModal from '@/components/ContentCreationModal'
 
 export default function AudienceInsights({ agentId }: { agentId: string }) {
   const [insights, setInsights] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
+  const [selectedPainPoint, setSelectedPainPoint] = useState<any>(null)
+  const [showContentModal, setShowContentModal] = useState(false)
 
   useEffect(() => {
     loadInsights()
@@ -96,9 +99,21 @@ export default function AudienceInsights({ agentId }: { agentId: string }) {
                       </p>
                     )}
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold">{insight.frequency}x</div>
-                    <div className="text-xs text-muted-foreground">mentions</div>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="text-right">
+                      <div className="text-2xl font-bold">{insight.frequency}x</div>
+                      <div className="text-xs text-muted-foreground">mentions</div>
+                    </div>
+                    <Button 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedPainPoint(insight)
+                        setShowContentModal(true)
+                      }}
+                    >
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Generate Content
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -106,6 +121,15 @@ export default function AudienceInsights({ agentId }: { agentId: string }) {
           ))}
         </div>
       )}
+      
+      <ContentCreationModal 
+        open={showContentModal}
+        onClose={() => {
+          setShowContentModal(false)
+          setSelectedPainPoint(null)
+        }}
+        painPoint={selectedPainPoint}
+      />
     </div>
   )
 }
