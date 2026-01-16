@@ -43,6 +43,13 @@ async function analyzeNotionPosts(agentId: string, data: any, supabase: any) {
   const notionApiKey = process.env.NOTION_API_KEY
   const notionDbId = data?.notionDatabaseId || process.env.NOTION_DATABASE_ID
   
+  // ADD DEBUG LOG 1
+  console.log('[Notion Debug] Starting analysis with:', {
+    hasApiKey: !!notionApiKey,
+    databaseId: notionDbId,
+    fromEnv: !data?.notionDatabaseId
+  })
+  
   if (!notionApiKey) {
     throw new Error('Notion API key not configured')
   }
@@ -55,12 +62,35 @@ async function analyzeNotionPosts(agentId: string, data: any, supabase: any) {
     database_id: notionDbId
   })
   
+  // ADD DEBUG LOG 2
+  console.log('[Notion Debug] Query response:', {
+    totalResults: response.results.length,
+    hasResults: response.results.length > 0
+  })
+  
   // Extract content
   const posts = []
   for (const page of response.results) {
     const props = page.properties
+    
+    // ADD DEBUG LOG 3 - Show available properties
+    if (posts.length === 0) {
+      console.log('[Notion Debug] Available properties in first page:', 
+        Object.keys(props)
+      )
+    }
+    
     const content = props['Treść Posta']?.rich_text?.[0]?.text?.content || ''
     const comments = props['Komentarze']?.rich_text?.[0]?.text?.content || ''
+    
+    // ADD DEBUG LOG 4
+    console.log('[Notion Debug] Page content:', {
+      pageId: page.id,
+      hasContent: !!content,
+      contentLength: content.length,
+      hasComments: !!comments,
+      contentPreview: content.substring(0, 50)
+    })
     
     if (content) {
       posts.push({
@@ -72,8 +102,23 @@ async function analyzeNotionPosts(agentId: string, data: any, supabase: any) {
     }
   }
   
+  // ADD DEBUG LOG 5
+  console.log('[Notion Debug] Extraction complete:', {
+    totalPages: response.results.length,
+    postsExtracted: posts.length,
+    extractionRate: `${posts.length}/${response.results.length}`
+  })
+  
   if (posts.length === 0) {
-    return NextResponse.json({ error: 'No posts found in Notion database' }, { status: 400 })
+    // ADD DEBUG LOG 6 - Enhanced error
+    console.error('[Notion Debug] No posts extracted! Check property names and types.')
+    return NextResponse.json({ 
+      error: 'No posts found in Notion database. Check server logs for details.',
+      debug: {
+        pagesReturned: response.results.length,
+        postsExtracted: posts.length
+      }
+    }, { status: 400 })
   }
   
   // AI analysis with OpenAI
