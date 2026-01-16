@@ -69,16 +69,21 @@ ${painPoint.raw_content ? `Original quote: "${painPoint.raw_content}"` : ''}`
       response_format: { type: 'json_object' }
     })
     
-    const result = JSON.parse(completion.choices[0].message.content || '{"recommendations":[]}')
+    if (!completion.choices?.length || !completion.choices[0].message.content) {
+      throw new Error('No recommendations generated from OpenAI')
+    }
+    
+    const result = JSON.parse(completion.choices[0].message.content)
     
     return NextResponse.json({ 
       success: true, 
       recommendations: result.recommendations || []
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Recommendation failed'
     console.error('Content recommendation error:', error)
     return NextResponse.json({ 
-      error: error.message || 'Recommendation failed' 
+      error: errorMessage
     }, { status: 500 })
   }
 }
