@@ -33,6 +33,13 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
   const [goal, setGoal] = useState('engagement')
   const [generatedContent, setGeneratedContent] = useState<any>(null)
   
+  // Meme-specific state
+  const [memeImage, setMemeImage] = useState<any>(null)
+  const [memeVersions, setMemeVersions] = useState<any[]>([])
+  const [refinementPrompt, setRefinementPrompt] = useState('')
+  const [refining, setRefining] = useState(false)
+  const [loadingVersions, setLoadingVersions] = useState(false)
+  
   const getRecommendations = async () => {
     if (!painPoint) return
     
@@ -63,25 +70,90 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
     
     setLoading(true)
     try {
-      const res = await fetch('/api/content/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          painPointId: painPoint.id,
-          contentType: selectedType,
-          options: { tone, goal }
+      // Check if it's a meme - use different endpoint
+      if (selectedType === 'meme') {
+        const res = await fetch('/api/content/generate-meme', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            painPointId: painPoint.id,
+            options: { tone, goal }
+          })
         })
-      })
-      
-      if (!res.ok) throw new Error('Failed to generate content')
-      
-      const data = await res.json()
-      setGeneratedContent(data.draft)
+        
+        if (!res.ok) throw new Error('Failed to generate meme')
+        
+        const data = await res.json()
+        setGeneratedContent(data.contentDraft)
+        setMemeImage(data.memeImage)
+        // Load all versions
+        await loadMemeVersions(data.contentDraft.id)
+      } else {
+        const res = await fetch('/api/content/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            painPointId: painPoint.id,
+            contentType: selectedType,
+            options: { tone, goal }
+          })
+        })
+        
+        if (!res.ok) throw new Error('Failed to generate content')
+        
+        const data = await res.json()
+        setGeneratedContent(data.draft)
+      }
     } catch (error: any) {
       alert(error.message)
     } finally {
       setLoading(false)
     }
+  }
+  
+  const loadMemeVersions = async (contentDraftId: string) => {
+    setLoadingVersions(true)
+    try {
+      const res = await fetch(`/api/content/meme-versions/${contentDraftId}`)
+      if (!res.ok) throw new Error('Failed to load versions')
+      
+      const data = await res.json()
+      setMemeVersions(data.versions || [])
+    } catch (error: any) {
+      console.error('Error loading versions:', error)
+    } finally {
+      setLoadingVersions(false)
+    }
+  }
+  
+  const refineMeme = async () => {
+    if (!memeImage || !refinementPrompt.trim()) return
+    
+    setRefining(true)
+    try {
+      const res = await fetch(`/api/content/refine-meme/${memeImage.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refinementPrompt })
+      })
+      
+      if (!res.ok) throw new Error('Failed to refine meme')
+      
+      const data = await res.json()
+      setMemeImage(data.memeImage)
+      setRefinementPrompt('')
+      // Reload versions
+      await loadMemeVersions(memeImage.content_draft_id)
+      alert('Meme refined successfully!')
+    } catch (error: any) {
+      alert(error.message)
+    } finally {
+      setRefining(false)
+    }
+  }
+  
+  const selectVersion = (version: any) => {
+    setMemeImage(version)
   }
   
   const copyToClipboard = () => {
@@ -278,6 +350,98 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                   </CardContent>
                 </Card>
                 
+                {/* Meme-specific content */}
+                {generatedContent.content_type === 'meme' && memeImage && (
+                  <div className="space-y-4">
+                    {/* Meme Image Display */}
+                    <Card>
+                      <CardContent className="pt-4">
+                        <Label className="text-xs text-gray-500 mb-2 block">Generated Meme Image</Label>
+                        <div className="relative">
+                          <img 
+                            src={memeImage.image_url} 
+                            alt="Generated meme"
+                            className="w-full rounded-lg border"
+                          />
+                          <Badge className="absolute top-2 right-2">
+                            v{memeImage.version}
+                          </Badge>
+                        </div>
+                        
+                        {memeImage.top_text && memeImage.bottom_text && (
+                          <div className="mt-3 p-3 bg-gray-50 rounded">
+                            <p className="text-sm">
+                              <span className="font-medium">Top:</span> {memeImage.top_text}
+                            </p>
+                            <p className="text-sm mt-1">
+                              <span className="font-medium">Bottom:</span> {memeImage.bottom_text}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Refinement Input */}
+                    <div className="space-y-2">
+                      <Label>Refine Meme</Label>
+                      <Textarea
+                        value={refinementPrompt}
+                        onChange={(e) => setRefinementPrompt(e.target.value)}
+                        placeholder="e.g., 'Add a dog', 'Make it funnier', 'Change to blue colors'"
+                        rows={2}
+                        className="resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={refineMeme}
+                          disabled={refining || !refinementPrompt.trim()}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {refining ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Refining...
+                            </>
+                          ) : (
+                            'Refine Image'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Version History */}
+                    {memeVersions.length > 1 && (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-gray-500">Version History ({memeVersions.length} versions)</Label>
+                        <div className="flex gap-2 overflow-x-auto pb-2">
+                          {memeVersions.map((version) => (
+                            <div
+                              key={version.id}
+                              className={`flex-shrink-0 cursor-pointer border-2 rounded-lg p-2 transition ${
+                                version.id === memeImage.id ? 'border-blue-500' : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              onClick={() => selectVersion(version)}
+                            >
+                              <img
+                                src={version.image_url}
+                                alt={`Version ${version.version}`}
+                                className="w-24 h-24 object-cover rounded"
+                              />
+                              <p className="text-xs text-center mt-1">v{version.version}</p>
+                              {version.refinement_prompt && (
+                                <p className="text-xs text-gray-500 text-center truncate w-24">
+                                  {version.refinement_prompt}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 <div className="flex gap-2">
                   <Button 
                     onClick={copyToClipboard}
@@ -304,6 +468,9 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                   onClick={() => {
                     setGeneratedContent(null)
                     setRecommendations([])
+                    setMemeImage(null)
+                    setMemeVersions([])
+                    setRefinementPrompt('')
                   }}
                   variant="ghost"
                   className="w-full"
