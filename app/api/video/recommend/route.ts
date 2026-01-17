@@ -4,7 +4,6 @@ import OpenAI from 'openai'
 
 interface VideoRecommendation {
   recommended_type: 'text_only' | 'talking_head'
-  recommended_engine: string
   recommended_engine: 'remotion' | 'creatomate' | 'd-id' | 'heygen'
   text_only_score: number
   talking_head_score: number
@@ -47,8 +46,7 @@ export async function POST(request: Request) {
     // Fetch draft with access check
     const { data: draft, error: draftError } = await supabase
       .from('content_drafts')
-      .select('*, agents!inner(space_id, spaces!inner(user_id))')
-      .select('*, agents(space_id, spaces(user_id)), pain_point:pain_point_id(sentiment)')
+      .select('*, agents!inner(space_id, spaces!inner(user_id)), pain_point:pain_point_id(sentiment)')
       .eq('id', draftId)
       .single()
     
@@ -75,19 +73,6 @@ export async function POST(request: Request) {
 async function analyzeForVideoFormat(draft: ContentDraft): Promise<VideoRecommendation> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   
-async function analyzeForVideoFormat(draft: any) {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Video recommendation failed'
-    console.error('Video recommendation error:', error)
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
-  }
-}
-
-async function analyzeForVideoFormat(draft: ContentDraft): Promise<VideoRecommendation> {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  
   const bodyLength = draft.body?.length || 0
   const sentiment = draft.pain_point?.sentiment || 'N/A'
   
@@ -99,22 +84,6 @@ async function analyzeForVideoFormat(draft: ContentDraft): Promise<VideoRecommen
         content: `You are a social media video strategist. Analyze content and recommend the best video format.
 
 Available formats:
-1. TEXT-ONLY (text overlays + animations)
-   - Best for: POV content, memes, quick tips, humorous/viral content
-   - Fast, cheap, high engagement
-   - Engines: Remotion, Creatomate
-
-2. TALKING HEAD (avatar with lip-sync)
-   - Best for: Educational, storytelling, building trust, longer content
-   - More expensive, builds personal connection
-   - Engines: D-ID, HeyGen
-
-Analyze based on:
-- content_type (reel/meme/deep_post/etc)
-- tone (humorous/empathetic/educational)
-- goal (viral/engagement/education)
-- length (short/medium/long)
-- sentiment
 1. TEXT-ONLY (text overlays + animations + background footage)
    - Best for: POV content, memes, quick tips, humorous/viral content, short punchy messages
    - Strengths: Fast production, high engagement, works for scrollers, trendy
@@ -130,50 +99,19 @@ Analyze based on:
    - Engines: D-ID (budget), HeyGen (premium)
 
 Analyze based on:
-- content_type: reel = lean text-only, deep_post = lean talking head
-- tone: humorous/viral → text-only, educational/empathetic → talking head
+- content_type: reel/meme = lean text-only, deep_post/newsletter = lean talking head
+- tone: humorous/controversial/viral → text-only, empathetic/educational → talking head
 - goal: viral/engagement → text-only, education/trust → talking head
 - body length: <200 chars → text-only, >300 chars → talking head
-- sentiment: frustrated/relatable → text-only, seeking help → talking head
+- sentiment: frustrated/relatable → text-only, seeking_help → talking head
 
 Return ONLY valid JSON (no markdown):
 {
   "recommended_type": "text_only" or "talking_head",
-  "recommended_engine": "remotion" or "d-id",
+  "recommended_engine": "remotion" or "creatomate" or "d-id" or "heygen",
   "text_only_score": 0-100,
   "talking_head_score": 0-100,
-  "reasoning": "1-2 sentence clear explanation",
-1. TEXT-ONLY (text overlays + animations)
-   - Best for: POV content, memes, quick tips, humorous/viral content
-   - Engines: Remotion (recommended, $0.10), Creatomate ($0.15)
-   - Pros: Fast, cheap, high engagement for short content
-   - Cons: Less personal connection
-
-2. TALKING HEAD (avatar with lip-sync)
-   - Best for: Educational, storytelling, building trust, longer content
-   - Engines: D-ID ($0.30), HeyGen ($1.00)
-   - Pros: Personal, builds trust, good for complex topics
-   - Cons: More expensive, slower
-
-Analyze these factors:
-- content_type: reel/meme → text-only, deep_post/newsletter → talking head
-- tone: humorous/controversial → text-only, empathetic/educational → talking head
-- goal: viral → text-only, education/trust → talking head
-- length: <150 chars → text-only, >300 chars → talking head
-- sentiment: frustrated/relatable → text-only, seeking_help → talking head
-
-Return JSON:
-{
-  "recommended_type": "text_only" or "talking_head",
-  "recommended_engine": "remotion" or "d-id",
-  "text_only_score": 0-100,
-  "talking_head_score": 0-100,
-  "reasoning": "Clear explanation why this format works best",
-  "key_factors": ["factor1", "factor2"],
-  "recommended_engine": "remotion" | "creatomate" | "d-id" | "heygen",
-  "text_only_score": 0-100,
-  "talking_head_score": 0-100,
-  "reasoning": "2-3 sentence explanation",
+  "reasoning": "2-3 sentence clear explanation why this format works best",
   "key_factors": ["factor1", "factor2", "factor3"],
   "estimated_cost": 0.10,
   "estimated_time_seconds": 60
@@ -181,16 +119,6 @@ Return JSON:
       },
       {
         role: 'user',
-        content: `Analyze this content:
-
-Content Type: ${draft.content_type}
-Tone: ${draft.tone || 'N/A'}
-Goal: ${draft.goal || 'N/A'}
-Hook: "${draft.hook || ''}"
-Body Length: ${draft.body?.length || 0} characters
-Platform: ${draft.target_platform || 'instagram'}
-
-Recommend the best video format.`
         content: `Analyze this content draft:
 
 Content Type: ${draft.content_type || 'reel'}
@@ -198,26 +126,23 @@ Tone: ${draft.tone || 'empathetic'}
 Goal: ${draft.goal || 'engagement'}
 Hook: "${draft.hook || ''}"
 Body: "${draft.body || ''}"
-Body Length: ${(draft.body || '').length} characters
-CTA: "${draft.cta || ''}"
-
-Recommend the best video format with scores and reasoning.`
-Content Type: ${draft.content_type}
-Tone: ${draft.tone || 'empathetic'}
-Goal: ${draft.goal || 'engagement'}
-Hook: "${draft.hook || ''}"
 Body Length: ${bodyLength} characters
 Sentiment: ${sentiment}
+Platform: ${draft.target_platform || 'instagram'}
 
-Recommend the best video format and engine.`
+Recommend the best video format and engine with scores and reasoning.`
       }
     ],
     response_format: { type: 'json_object' }
   })
   
-  const result = JSON.parse(completion.choices[0].message.content || '{}')
+  if (!completion.choices?.length || !completion.choices[0].message.content) {
+    throw new Error('No recommendation generated from OpenAI')
+  }
   
-  // Validate and return
+  const result = JSON.parse(completion.choices[0].message.content) as VideoRecommendation
+  
+  // Validate and add timestamp
   return {
     recommended_type: result.recommended_type || 'text_only',
     recommended_engine: result.recommended_engine || 'remotion',
@@ -226,19 +151,7 @@ Recommend the best video format and engine.`
     reasoning: result.reasoning || 'Analysis complete',
     key_factors: result.key_factors || [],
     estimated_cost: result.estimated_cost || 0.10,
-    estimated_time_seconds: result.estimated_time_seconds || 60
+    estimated_time_seconds: result.estimated_time_seconds || 60,
+    analyzed_at: new Date().toISOString()
   }
-    estimated_cost: result.estimated_cost || 0.15,
-    estimated_time_seconds: result.estimated_time_seconds || 60
-  }
-  if (!completion.choices?.length || !completion.choices[0].message.content) {
-    throw new Error('No recommendation generated from OpenAI')
-  }
-  
-  const result = JSON.parse(completion.choices[0].message.content) as VideoRecommendation
-  
-  // Add timestamp
-  result.analyzed_at = new Date().toISOString()
-  
-  return result
 }
