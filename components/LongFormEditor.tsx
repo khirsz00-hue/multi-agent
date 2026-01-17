@@ -77,9 +77,17 @@ export default function LongFormEditor({ draftId, onClose }: LongFormEditorProps
     if (!editingSection) return
     
     try {
-      const content = editingSection === 'visual_suggestions'
-        ? JSON.parse(editContent)
-        : editContent
+      let content
+      if (editingSection === 'visual_suggestions') {
+        try {
+          content = JSON.parse(editContent)
+        } catch (parseError) {
+          alert('Invalid JSON format for visual suggestions. Please check your syntax.')
+          return
+        }
+      } else {
+        content = editContent
+      }
 
       const res = await fetch('/api/content/edit-section', {
         method: 'PUT',

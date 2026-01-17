@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.content_versions (
   draft_id UUID NOT NULL REFERENCES content_drafts(id) ON DELETE CASCADE,
   
   -- Version metadata
-  version_number INTEGER NOT NULL DEFAULT 1,
+  version_number INTEGER NOT NULL,
   is_current BOOLEAN DEFAULT true,
   
   -- Sections (stored separately to enable section-level editing)
