@@ -37,15 +37,14 @@ export async function createVersion(
     const supabase = await createClient()
     
     // Get next version number
-    const { data: maxVersion } = await supabase
+    const { data: versions } = await supabase
       .from('content_versions')
       .select('version_number')
       .eq('content_draft_id', contentDraftId)
       .order('version_number', { ascending: false })
       .limit(1)
-      .single()
     
-    const nextVersionNumber = (maxVersion?.version_number || 0) + 1
+    const nextVersionNumber = (versions && versions.length > 0 ? versions[0].version_number : 0) + 1
     
     // Insert new version
     const { data, error } = await supabase

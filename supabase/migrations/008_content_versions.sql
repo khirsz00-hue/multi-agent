@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS content_versions (
 );
 
 -- Add columns to content_drafts for version tracking
+-- Note: current_version_id creates an optional circular reference for denormalization
+-- This is intentional to allow quick access to the current version without a query
 ALTER TABLE content_drafts 
   ADD COLUMN IF NOT EXISTS current_version_id UUID REFERENCES content_versions(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS edit_status TEXT DEFAULT 'ready' CHECK (edit_status IN ('editing', 'ready', 'published'));
@@ -75,6 +77,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function to automatically create a version on content update
+-- NOTE: When adding new content fields to content_drafts, update the field list below
 CREATE OR REPLACE FUNCTION create_content_version()
 RETURNS TRIGGER AS $$
 DECLARE
