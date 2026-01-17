@@ -12,8 +12,10 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Copy, Check, Sparkles, AlertCircle } from 'lucide-react'
+import { Loader2, Copy, Check, Sparkles, AlertCircle, Edit3 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ScenarioEditor } from './ScenarioEditor'
+import { type ReelScenario } from '@/lib/reel-validator'
 
 interface ContentCreationModalProps {
   painPoint: {
@@ -41,6 +43,12 @@ export function ContentCreationModal({
   const [generatedContent, setGeneratedContent] = useState<any>(null)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Two-stage reel flow state
+  const [reelStage, setReelStage] = useState<'config' | 'editing' | 'finalized'>('config')
+  const [draftScenario, setDraftScenario] = useState<any>(null)
+  const [validation, setValidation] = useState<any>(null)
+  const [qualityScore, setQualityScore] = useState(0)
   
   const contentTypeLabels: Record<string, string> = {
     reel: 'Instagram Reel/TikTok',
@@ -79,23 +87,94 @@ export function ContentCreationModal({
     setError(null)
     
     try {
-      const res = await fetch('/api/content/generate', {
+      // For reels, use two-stage generation
+      if (contentType === 'reel') {
+        const res = await fetch('/api/content/draft-reel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            painPointId: painPoint.id,
+            options: { tone, goal, additionalNotes }
+          })
+        })
+        
+        if (!res.ok) {
+          const errorData = await res.json()
+          throw new Error(errorData.error || 'Draft generation failed')
+        }
+        
+        const data = await res.json()
+        setDraftScenario(data.draft)
+        setValidation(data.validation)
+        setQualityScore(data.qualityScore)
+        setReelStage('editing')
+      } else {
+        // For other content types, use single-stage generation
+        const res = await fetch('/api/content/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            painPointId: painPoint.id,
+            contentType,
+            options: { tone, goal, additionalNotes }
+          })
+        })
+        
+        if (!res.ok) {
+          const errorData = await res.json()
+          throw new Error(errorData.error || 'Generation failed')
+        }
+        
+        const data = await res.json()
+        setGeneratedContent(data.draft)
+      }
+    } catch (error: any) {
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  const handleUpdateScenario = async (updatedScenario: ReelScenario, changedFields: any) => {
+    if (!draftScenario?.id) return
+    
+    const res = await fetch(`/api/content/draft-reel/${draftScenario.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updatedScenario, changedFields })
+    })
+    
+    if (!res.ok) {
+      throw new Error('Failed to update scenario')
+    }
+    
+    const data = await res.json()
+    setDraftScenario(data.draft)
+    setValidation(data.validation)
+    setQualityScore(data.qualityScore)
+  }
+  
+  const handleFinalizeReel = async () => {
+    if (!draftScenario?.id) return
+    
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const res = await fetch('/api/content/finalize-reel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          painPointId: painPoint.id,
-          contentType,
-          options: { tone, goal, additionalNotes }
-        })
+        body: JSON.stringify({ draftId: draftScenario.id })
       })
       
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(errorData.error || 'Generation failed')
+        throw new Error(errorData.error || 'Finalization failed')
       }
       
       const data = await res.json()
-      setGeneratedContent(data.draft)
+      setGeneratedContent(data.finalDraft)
+      setReelStage('finalized')
     } catch (error: any) {
       setError(error.message)
     } finally {
@@ -166,7 +245,7 @@ export function ContentCreationModal({
                   </p>
                   {currentRecommendation.hook_suggestion && (
                     <p className="text-sm text-blue-600 mt-2 italic">
-                      💡 Suggested hook: &quot;{currentRecommendation.hook_suggestion}&quot;
+                      💡 Suggested hook: &ldquo;{currentRecommendation.hook_suggestion}&rdquo;
                     </p>
                   )}
                 </div>
@@ -181,7 +260,37 @@ export function ContentCreationModal({
             </Alert>
           )}
           
-          {!generatedContent && (
+          {/* Two-stage reel editing flow */}
+          {contentType === 'reel' && reelStage === 'editing' && draftScenario && (
+            <>
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 p-3 rounded">
+                <div className="flex items-start gap-2">
+                  <Edit3 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-green-900">
+                      Draft Scenario Generated!
+                    </p>
+                    <p className="text-sm text-green-700 mt-1">
+                      Review and edit the scenario below before finalizing. Make any changes you want, then click &ldquo;Finalize&rdquo; to generate the optimized reel.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <ScenarioEditor
+                draftId={draftScenario.id}
+                initialScenario={draftScenario.draft_scenario}
+                validation={validation}
+                qualityScore={qualityScore}
+                onUpdate={handleUpdateScenario}
+                onFinalize={handleFinalizeReel}
+                loading={loading}
+              />
+            </>
+          )}
+          
+          {/* Configuration stage (for reels before draft or other content types) */}
+          {(!generatedContent && reelStage === 'config') && (
             <>
               {/* Tone Selection */}
               <div>
@@ -264,25 +373,30 @@ export function ContentCreationModal({
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating Content...
+                    {contentType === 'reel' ? 'Generating Draft Scenario...' : 'Generating Content...'}
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Generate Content
+                    {contentType === 'reel' ? 'Generate Draft Scenario' : 'Generate Content'}
                   </>
                 )}
               </Button>
             </>
           )}
           
-          {/* Generated Content Preview */}
-          {generatedContent && (
+          {/* Generated Content Preview (for non-reel content or finalized reels) */}
+          {generatedContent && reelStage !== 'editing' && (
             <div className="space-y-4">
               <div className="bg-green-50 border border-green-200 p-3 rounded">
                 <p className="text-sm font-medium text-green-900">
-                  ✅ Content Generated Successfully!
+                  ✅ {contentType === 'reel' && reelStage === 'finalized' ? 'Reel Finalized Successfully!' : 'Content Generated Successfully!'}
                 </p>
+                {contentType === 'reel' && reelStage === 'finalized' && (
+                  <p className="text-sm text-green-700 mt-1">
+                    Your edited scenario has been optimized and is ready to use!
+                  </p>
+                )}
               </div>
               
               {/* Hook */}
@@ -380,7 +494,11 @@ export function ContentCreationModal({
               
               <Button 
                 variant="ghost" 
-                onClick={() => setGeneratedContent(null)}
+                onClick={() => {
+                  setGeneratedContent(null)
+                  setReelStage('config')
+                  setDraftScenario(null)
+                }}
                 className="w-full"
                 size="sm"
               >
