@@ -5,13 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Edit, RefreshCw, Check } from 'lucide-react'
+import { Calendar, Edit, RefreshCw, Check, History } from 'lucide-react'
+import ContentVersionManager from '@/components/content/ContentVersionManager'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 export default function ContentCalendar({ agentId }: { agentId: string }) {
   const [posts, setPosts] = useState<any[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editedContent, setEditedContent] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [versionDialogOpen, setVersionDialogOpen] = useState<string | null>(null)
 
   useEffect(() => {
     loadCurrentMonth()
@@ -185,6 +188,26 @@ export default function ContentCalendar({ agentId }: { agentId: string }) {
                         <RefreshCw className="h-4 w-4 mr-2" />
                         Regenerate
                       </Button>
+                      <Dialog open={versionDialogOpen === post.id} onOpenChange={(open) => setVersionDialogOpen(open ? post.id : null)}>
+                        <DialogTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            <History className="h-4 w-4 mr-2" />
+                            History
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Version History</DialogTitle>
+                          </DialogHeader>
+                          <ContentVersionManager
+                            contentDraftId={post.id}
+                            onVersionRestore={() => {
+                              loadCurrentMonth()
+                              setVersionDialogOpen(null)
+                            }}
+                          />
+                        </DialogContent>
+                      </Dialog>
                     </>
                   )}
                 </div>

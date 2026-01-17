@@ -25,3 +25,28 @@ USING (
   bucket_id = 'agent-files' AND
   (storage.foldername(name))[1] = auth.uid()::text
 );
+
+-- Storage Bucket Policies for 'meme-images' bucket
+-- Create the bucket first in Supabase Dashboard → Storage
+-- Or run: INSERT INTO storage.buckets (id, name, public) VALUES ('meme-images', 'meme-images', true);
+
+-- Allow authenticated users to upload meme images to their own folder
+CREATE POLICY "Authenticated users can upload meme images"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'meme-images' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- Allow public read access to meme images (since they'll be displayed on posts)
+CREATE POLICY "Public can view meme images"
+ON storage.objects FOR SELECT TO public
+USING (bucket_id = 'meme-images');
+
+-- Allow users to delete their own meme images
+CREATE POLICY "Users can delete their own meme images"
+ON storage.objects FOR DELETE TO authenticated
+USING (
+  bucket_id = 'meme-images' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
