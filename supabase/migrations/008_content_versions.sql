@@ -55,7 +55,9 @@ BEGIN
   WHERE draft_id = NEW.draft_id AND id != NEW.id;
   
   -- Set version number if not provided
+  -- Use advisory lock to prevent race conditions
   IF NEW.version_number IS NULL THEN
+    PERFORM pg_advisory_xact_lock(hashtext('version_' || NEW.draft_id::text));
     NEW.version_number := COALESCE(
       (SELECT MAX(version_number) FROM content_versions WHERE draft_id = NEW.draft_id),
       0

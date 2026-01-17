@@ -136,19 +136,14 @@ export default function LongFormEditor({ draftId, onClose }: LongFormEditorProps
     
     try {
       // Create new version with all sections from the old version
-      const res = await fetch('/api/content/edit-section', {
-        method: 'PUT',
+      const res = await fetch('/api/content/restore-version', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          versionId: currentVersion.id,
-          section: 'hook', // We'll create a version with all sections
-          content: versionToRestore.hook
-        })
+        body: JSON.stringify({ versionId })
       })
       
       if (!res.ok) throw new Error('Failed to restore version')
       
-      // This is a simplified restore - in production, you'd want to restore all sections at once
       await loadDraft()
       setCompareVersion(null)
     } catch (error: any) {
