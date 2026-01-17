@@ -2,6 +2,33 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 
+interface VideoRecommendation {
+  recommended_type: 'text_only' | 'talking_head'
+  recommended_engine: string
+  text_only_score: number
+  talking_head_score: number
+  reasoning: string
+  key_factors: string[]
+  estimated_cost: number
+  estimated_time_seconds: number
+}
+
+interface ContentDraft {
+  id: string
+  content_type: string
+  tone?: string
+  goal?: string
+  hook?: string
+  body?: string
+  target_platform?: string
+  agents: {
+    space_id: string
+    spaces: {
+      user_id: string
+    }
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { draftId } = await request.json()
@@ -39,7 +66,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function analyzeForVideoFormat(draft: any) {
+async function analyzeForVideoFormat(draft: ContentDraft): Promise<VideoRecommendation> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   
   const completion = await openai.chat.completions.create({

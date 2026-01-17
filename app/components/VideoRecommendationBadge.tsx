@@ -3,8 +3,19 @@
 import { Badge } from '@/components/ui/badge'
 import { Sparkles } from 'lucide-react'
 
+interface VideoRecommendation {
+  recommended_type: 'text_only' | 'talking_head'
+  recommended_engine: string
+  text_only_score: number
+  talking_head_score: number
+  reasoning: string
+  key_factors: string[]
+  estimated_cost: number
+  estimated_time_seconds: number
+}
+
 interface VideoRecommendationBadgeProps {
-  recommendation: any
+  recommendation: VideoRecommendation | null
 }
 
 export function VideoRecommendationBadge({ recommendation }: VideoRecommendationBadgeProps) {
