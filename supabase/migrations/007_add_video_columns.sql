@@ -1,3 +1,4 @@
+-- Add video-related columns to content_drafts table
 -- Add video generation columns to content_drafts
 ALTER TABLE content_drafts 
   ADD COLUMN IF NOT EXISTS video_url TEXT,
@@ -7,6 +8,9 @@ ALTER TABLE content_drafts
   ADD COLUMN IF NOT EXISTS ai_video_recommendation JSONB,
   ADD COLUMN IF NOT EXISTS video_generated_at TIMESTAMP WITH TIME ZONE;
 
+-- Create indexes for video-related columns
+CREATE INDEX IF NOT EXISTS idx_content_drafts_video_type ON content_drafts(video_type);
+CREATE INDEX IF NOT EXISTS idx_content_drafts_video_generated ON content_drafts(video_generated_at);
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_content_drafts_video_type 
   ON content_drafts(video_type);
