@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
   Dialog,
   DialogContent,
@@ -12,10 +13,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Copy, Calendar, Loader2, Video, ImageIcon, FileText, Mail, Twitter } from 'lucide-react'
+import { Copy, Calendar, Loader2, Video, ImageIcon, FileText, Mail, Twitter, Sparkles, RefreshCw } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 
 interface ContentCreationModalProps {
   open: boolean
@@ -32,6 +34,10 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
   const [tone, setTone] = useState('empathetic')
   const [goal, setGoal] = useState('engagement')
   const [generatedContent, setGeneratedContent] = useState<any>(null)
+  const [memeImage, setMemeImage] = useState<any>(null)
+  const [generatingMeme, setGeneratingMeme] = useState(false)
+  const [refinementPrompt, setRefinementPrompt] = useState('')
+  const [refiningMeme, setRefiningMeme] = useState(false)
   
   const getRecommendations = async () => {
     if (!painPoint) return
@@ -77,10 +83,72 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
       
       const data = await res.json()
       setGeneratedContent(data.draft)
+      
+      // If it's a meme, automatically generate the image
+      if (selectedType === 'meme' && data.draft) {
+        await generateMemeImage(data.draft.id)
+      }
     } catch (error: any) {
       alert(error.message)
     } finally {
       setLoading(false)
+    }
+  }
+  
+  const generateMemeImage = async (contentDraftId?: string) => {
+    if (!painPoint) return
+    
+    setGeneratingMeme(true)
+    try {
+      const res = await fetch('/api/content/generate-meme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          painPointId: painPoint.id,
+          contentDraftId: contentDraftId || generatedContent?.id
+        })
+      })
+      
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to generate meme image')
+      }
+      
+      const data = await res.json()
+      setMemeImage(data.memeImage)
+    } catch (error: any) {
+      alert(error.message)
+    } finally {
+      setGeneratingMeme(false)
+    }
+  }
+  
+  const refineMemeImage = async () => {
+    if (!memeImage || !refinementPrompt.trim()) return
+    
+    setRefiningMeme(true)
+    try {
+      const res = await fetch('/api/content/refine-meme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memeImageId: memeImage.id,
+          refinementPrompt: refinementPrompt.trim()
+        })
+      })
+      
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to refine meme')
+      }
+      
+      const data = await res.json()
+      setMemeImage(data.memeImage)
+      setRefinementPrompt('')
+    } catch (error: any) {
+      alert(error.message)
+    } finally {
+      setRefiningMeme(false)
     }
   }
   
@@ -177,7 +245,7 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                                   </div>
                                   <p className="text-sm text-gray-600">{rec.reasoning}</p>
                                   <p className="text-xs text-gray-500 mt-1 italic">
-                                    &ldquo;{rec.hook_suggestion}&rdquo;
+                                    {`"${rec.hook_suggestion}"`}
                                   </p>
                                 </div>
                               </div>
@@ -245,6 +313,93 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                   <h3 className="font-bold">Generated Content</h3>
                   <Badge>{generatedContent.content_type}</Badge>
                 </div>
+                
+                {/* Meme Image Section */}
+                {selectedType === 'meme' && (
+                  <div className="space-y-3">
+                    {generatingMeme ? (
+                      <Card>
+                        <CardContent className="pt-6 text-center">
+                          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-blue-600" />
+                          <p className="text-sm text-gray-600">Generating meme image...</p>
+                        </CardContent>
+                      </Card>
+                    ) : memeImage ? (
+                      <div className="space-y-3">
+                        <Card>
+                          <CardContent className="pt-4">
+                            <div className="relative w-full aspect-square">
+                              <Image
+                                src={memeImage.image_url}
+                                alt="Generated meme"
+                                fill
+                                className="rounded-lg object-cover"
+                                unoptimized
+                              />
+                            </div>
+                            <div className="mt-3 space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600">Format:</span>
+                                <Badge variant="secondary">{memeImage.meme_format}</Badge>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600">Version:</span>
+                                <Badge variant="outline">v{memeImage.version}</Badge>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        {/* Refinement Section */}
+                        <Card>
+                          <CardContent className="pt-4 space-y-3">
+                            <Label>Refine Meme Image</Label>
+                            <p className="text-xs text-gray-500">
+                              Request changes like &quot;Add a dog&quot;, &quot;Change colors to blue&quot;, etc.
+                            </p>
+                            <Input
+                              placeholder="e.g., Make it funnier, change background color..."
+                              value={refinementPrompt}
+                              onChange={(e) => setRefinementPrompt(e.target.value)}
+                              disabled={refiningMeme}
+                            />
+                            <Button
+                              onClick={refineMemeImage}
+                              disabled={refiningMeme || !refinementPrompt.trim()}
+                              variant="outline"
+                              className="w-full"
+                            >
+                              {refiningMeme ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Refining...
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCw className="h-4 w-4 mr-2" />
+                                  Refine Image
+                                </>
+                              )}
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    ) : (
+                      <Card>
+                        <CardContent className="pt-6 text-center">
+                          <Button
+                            onClick={() => generateMemeImage()}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Generate Meme Image
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
                 
                 <Card>
                   <CardContent className="pt-4 space-y-3">
