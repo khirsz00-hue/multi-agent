@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 
+// Image format for meme storage (SVG for placeholder, PNG/JPG for production APIs)
+const MEME_IMAGE_FORMAT = 'svg'
+const MEME_CONTENT_TYPE = 'image/svg+xml'
+
 /**
  * POST /api/content/generate-meme
  * 
@@ -92,13 +96,13 @@ export async function POST(request: Request) {
     
     // Step 4: Upload to Supabase Storage
     const timestamp = Date.now()
-    const storagePath = `${agentId}/${contentDraft.id}/${timestamp}.svg`
+    const storagePath = `${agentId}/${contentDraft.id}/${timestamp}.${MEME_IMAGE_FORMAT}`
     
     console.log('Uploading image to Supabase Storage...')
     const { data: storageData, error: storageError } = await supabase.storage
       .from('meme-images')
       .upload(storagePath, Buffer.from(imageData, 'base64'), {
-        contentType: 'image/svg+xml',
+        contentType: MEME_CONTENT_TYPE,
         cacheControl: '3600'
       })
     

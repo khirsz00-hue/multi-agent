@@ -40,6 +40,7 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
   const [refinementPrompt, setRefinementPrompt] = useState('')
   const [refining, setRefining] = useState(false)
   const [loadingVersions, setLoadingVersions] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   
   const getRecommendations = async () => {
     if (!painPoint) return
@@ -145,9 +146,11 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
       setRefinementPrompt('')
       // Reload versions
       await loadMemeVersions(memeImage.content_draft_id)
-      alert('Meme refined successfully!')
+      setSuccessMessage('Meme refined successfully!')
+      setTimeout(() => setSuccessMessage(''), 3000)
     } catch (error: any) {
-      alert(error.message)
+      setSuccessMessage(`Error: ${error.message}`)
+      setTimeout(() => setSuccessMessage(''), 5000)
     } finally {
       setRefining(false)
     }
@@ -393,7 +396,7 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                         rows={2}
                         className="resize-none"
                       />
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
                         <Button
                           onClick={refineMeme}
                           disabled={refining || !refinementPrompt.trim()}
@@ -409,6 +412,11 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                             'Refine Image'
                           )}
                         </Button>
+                        {successMessage && (
+                          <span className={`text-sm ${successMessage.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
+                            {successMessage}
+                          </span>
+                        )}
                       </div>
                     </div>
                     

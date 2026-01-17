@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.meme_images (
   
   -- Image storage
   image_url TEXT NOT NULL, -- Public URL from Supabase Storage
-  storage_path TEXT NOT NULL, -- Path in storage: meme-images/{agentId}/{contentDraftId}/{timestamp}.png
+  storage_path TEXT NOT NULL, -- Path in storage: meme-images/{agentId}/{contentDraftId}/{timestamp}.svg (or .png for production)
   
   -- Version tracking
   version INTEGER DEFAULT 1,
