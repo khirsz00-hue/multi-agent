@@ -769,6 +769,7 @@ You → Copy → Publish → Mark done (2 min)
 - [x] Multi-Agent Dashboard
 - [x] Email notification system
 - [x] Daily reminder cron job
+- [x] Two-stage reel/video scenario editor
 - [ ] Multi-user collaboration in spaces
 - [ ] Advanced file processing (PDFs, images, code)
 - [ ] Conversation export and sharing
@@ -778,6 +779,73 @@ You → Copy → Publish → Mark done (2 min)
 - [ ] Voice input/output support
 - [ ] Mobile app (React Native)
 - [ ] API for external integrations
+
+## 🎬 Reel/Video Scenario Editor
+
+The platform now includes a sophisticated two-stage reel generation workflow that allows users to edit and refine their content BEFORE final generation.
+
+### Features
+
+1. **Two-Stage Generation**
+   - Stage 1: Generate draft scenario with AI
+   - Stage 2: User edits scenario with validation
+   - Stage 3: Generate optimized final reel
+
+2. **Scenario Editor**
+   - Editable hook, body, and CTA fields
+   - Key moments timeline editor
+   - Visual suggestions (format, music vibe)
+   - Live character counts and validation
+   - Real-time quality score (0-100)
+
+3. **Validation System**
+   - Hook length: 3-10 seconds (30-150 chars, 6-30 words)
+   - Key moments timing validation
+   - CTA clarity checks
+   - AI-powered improvement suggestions
+
+4. **API Endpoints**
+   - `POST /api/content/draft-reel` - Generate draft scenario
+   - `PUT /api/content/draft-reel/[draftId]` - Update scenario
+   - `POST /api/content/finalize-reel` - Generate final reel
+   - `GET /api/content/draft-reel/[draftId]` - Get scenario state
+
+5. **Version History**
+   - Track all edits in edit_history
+   - Compare original vs edited scenario
+   - Quality score progression
+
+### Usage
+
+1. **Create Reel from Pain Point**
+   - Select "Create Reel" option
+   - Choose tone and goal
+   - Click "Generate Draft Scenario"
+
+2. **Edit Scenario**
+   - Review AI-generated draft
+   - Edit hook, body, CTA
+   - Adjust key moments timeline
+   - Modify visual suggestions
+   - See real-time validation feedback
+
+3. **Finalize**
+   - Save all changes
+   - Click "Finalize & Generate Reel"
+   - AI optimizes based on edits
+   - Copy final content to clipboard
+
+### Quality Score
+
+The system calculates a quality score (0-100) based on:
+- Hook quality (+20 max)
+- Key moments quality (+15 max)
+- CTA quality (+15 max)
+- Visual suggestions (+10 max)
+- Hashtags (+10 max)
+- Warnings penalty (-5 each)
+
+See `REEL_EDITOR_DOCUMENTATION.md` for detailed technical documentation.
 
 ## 🤝 Contributing
 
