@@ -77,6 +77,11 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
     
     setLoading(true)
     try {
+      // Use long-form generation for newsletter and deep_post
+      const isLongForm = ['newsletter', 'deep_post'].includes(selectedType)
+      const endpoint = isLongForm ? '/api/content/generate-long-form' : '/api/content/generate'
+      
+      const res = await fetch(endpoint, {
       // Check if it's a meme - use different endpoint
       if (selectedType === 'meme') {
         const res = await fetch('/api/content/generate-meme', {
@@ -189,6 +194,14 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
       }
       
       const data = await res.json()
+      
+      // For long-form content, redirect to editor
+      if (isLongForm && data.draft?.id) {
+        router.push(`/dashboard/long-form-editor/${data.draft.id}`)
+        onClose()
+      } else {
+        setGeneratedContent(data.draft)
+      }
       setMemeImage(data.memeImage)
     } catch (error: any) {
       alert(error.message)
