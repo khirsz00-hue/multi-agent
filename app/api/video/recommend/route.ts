@@ -4,6 +4,7 @@ import OpenAI from 'openai'
 
 interface VideoRecommendation {
   recommended_type: 'text_only' | 'talking_head'
+  recommended_engine: string
   recommended_engine: 'remotion' | 'creatomate' | 'd-id' | 'heygen'
   text_only_score: number
   talking_head_score: number
@@ -21,6 +22,7 @@ interface ContentDraft {
   goal?: string
   hook?: string
   body?: string
+  target_platform?: string
   agents: {
     space_id: string
     spaces: {
@@ -70,6 +72,9 @@ export async function POST(request: Request) {
   }
 }
 
+async function analyzeForVideoFormat(draft: ContentDraft): Promise<VideoRecommendation> {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  
 async function analyzeForVideoFormat(draft: any) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   
@@ -94,6 +99,22 @@ async function analyzeForVideoFormat(draft: ContentDraft): Promise<VideoRecommen
         content: `You are a social media video strategist. Analyze content and recommend the best video format.
 
 Available formats:
+1. TEXT-ONLY (text overlays + animations)
+   - Best for: POV content, memes, quick tips, humorous/viral content
+   - Fast, cheap, high engagement
+   - Engines: Remotion, Creatomate
+
+2. TALKING HEAD (avatar with lip-sync)
+   - Best for: Educational, storytelling, building trust, longer content
+   - More expensive, builds personal connection
+   - Engines: D-ID, HeyGen
+
+Analyze based on:
+- content_type (reel/meme/deep_post/etc)
+- tone (humorous/empathetic/educational)
+- goal (viral/engagement/education)
+- length (short/medium/long)
+- sentiment
 1. TEXT-ONLY (text overlays + animations + background footage)
    - Best for: POV content, memes, quick tips, humorous/viral content, short punchy messages
    - Strengths: Fast production, high engagement, works for scrollers, trendy
@@ -144,6 +165,11 @@ Analyze these factors:
 Return JSON:
 {
   "recommended_type": "text_only" or "talking_head",
+  "recommended_engine": "remotion" or "d-id",
+  "text_only_score": 0-100,
+  "talking_head_score": 0-100,
+  "reasoning": "Clear explanation why this format works best",
+  "key_factors": ["factor1", "factor2"],
   "recommended_engine": "remotion" | "creatomate" | "d-id" | "heygen",
   "text_only_score": 0-100,
   "talking_head_score": 0-100,
@@ -155,6 +181,16 @@ Return JSON:
       },
       {
         role: 'user',
+        content: `Analyze this content:
+
+Content Type: ${draft.content_type}
+Tone: ${draft.tone || 'N/A'}
+Goal: ${draft.goal || 'N/A'}
+Hook: "${draft.hook || ''}"
+Body Length: ${draft.body?.length || 0} characters
+Platform: ${draft.target_platform || 'instagram'}
+
+Recommend the best video format.`
         content: `Analyze this content draft:
 
 Content Type: ${draft.content_type || 'reel'}
@@ -189,6 +225,9 @@ Recommend the best video format and engine.`
     talking_head_score: result.talking_head_score || 50,
     reasoning: result.reasoning || 'Analysis complete',
     key_factors: result.key_factors || [],
+    estimated_cost: result.estimated_cost || 0.10,
+    estimated_time_seconds: result.estimated_time_seconds || 60
+  }
     estimated_cost: result.estimated_cost || 0.15,
     estimated_time_seconds: result.estimated_time_seconds || 60
   }
