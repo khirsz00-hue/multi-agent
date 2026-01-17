@@ -4,7 +4,7 @@ import { getVersions } from '@/lib/version-tracking'
 
 export async function GET(
   request: Request,
-  { params }: { params: { contentDraftId: string } }
+  context: { params: Promise<{ contentDraftId: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    const { contentDraftId } = params
+    const { contentDraftId } = await context.params
     
     // Verify user owns this content draft
     const { data: draft } = await supabase

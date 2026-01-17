@@ -4,7 +4,7 @@ import { restoreVersion, getVersion } from '@/lib/version-tracking'
 
 export async function POST(
   request: Request,
-  { params }: { params: { versionId: string } }
+  context: { params: Promise<{ versionId: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -14,7 +14,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    const { versionId } = params
+    const { versionId } = await context.params
     
     // Get the version
     const version = await getVersion(versionId)
