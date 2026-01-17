@@ -3,11 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function PUT(
   request: Request,
-  { params }: { params: { draftId: string } }
+  { params }: { params: Promise<{ draftId: string }> }
 ) {
   try {
     const { draft } = await request.json()
-    const { draftId } = params
+    const { draftId } = await params
     
     if (!draft) {
       return NextResponse.json({ error: 'Draft content required' }, { status: 400 })

@@ -28,6 +28,7 @@ export default function QuickContentEditor({
 
   useEffect(() => {
     loadDraft()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftId])
 
   const loadDraft = async () => {

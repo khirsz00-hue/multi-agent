@@ -5,7 +5,7 @@ import QuickContentEditor from '@/components/quick-editor/QuickContentEditor'
 export default async function QuickEditorPage({ 
   params 
 }: { 
-  params: { draftId: string } 
+  params: Promise<{ draftId: string }> 
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -14,9 +14,11 @@ export default async function QuickEditorPage({
     redirect('/login')
   }
 
+  const { draftId } = await params
+
   return (
     <div className="container mx-auto py-8 px-4 max-w-5xl">
-      <QuickContentEditor draftId={params.draftId} />
+      <QuickContentEditor draftId={draftId} />
     </div>
   )
 }
