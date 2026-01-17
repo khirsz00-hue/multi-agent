@@ -80,3 +80,40 @@ export const AGENT_TYPES = [
 ] as const;
 
 export type AgentType = typeof AGENT_TYPES[number];
+
+// Quick Content Editor Types
+export type QuickContentType = 'engagement_post' | 'thread';
+
+export interface EngagementPostContent {
+  hook: string;
+  body: string;
+  cta: string;
+  hashtags: string[];
+  format_suggestion?: string;
+  engagement_tips?: string[];
+}
+
+export interface ThreadContent {
+  tweets: string[];
+  hashtags: string[];
+  thread_tips?: string[];
+}
+
+export interface ContentDraft {
+  id: string;
+  agent_id: string;
+  pain_point_id?: string;
+  content_type: QuickContentType | string;
+  tone: string;
+  goal: string;
+  draft: EngagementPostContent | ThreadContent | Record<string, unknown>;
+  status: 'draft' | 'approved' | 'published' | 'archived';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+}

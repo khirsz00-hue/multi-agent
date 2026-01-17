@@ -32,6 +32,7 @@ The agents work in a coordinated flow:
 - **Multi-Agent Dashboard**: Unified view of all agents working together
 - **Email Notifications**: Daily reminders with content ready to publish
 - **Multi-LLM Provider**: Support for OpenAI, Anthropic (Claude), Google (Gemini), and Ollama
+- **Meme Generation**: AI-powered meme creation with iterative refinement (see [docs/MEME_GENERATION.md](docs/MEME_GENERATION.md))
 - **File Upload & Processing**: Upload documents and leverage RAG (Retrieval Augmented Generation)
 - **Intelligent Chat**: Conversational interface with context-aware responses
 - **Vector Search**: Semantic search using pgvector for relevant information retrieval
@@ -769,6 +770,12 @@ You → Copy → Publish → Mark done (2 min)
 - [x] Multi-Agent Dashboard
 - [x] Email notification system
 - [x] Daily reminder cron job
+- [x] Two-stage reel/video scenario editor
+- [x] Long-form Content Editor (Newsletter & Deep Post)
+  - [x] Section-by-section editing (hook, body, cta, visual_suggestions)
+  - [x] AI-powered section refinement with instructions
+  - [x] Version tracking and comparison
+  - [x] Restore previous versions
 - [ ] Multi-user collaboration in spaces
 - [ ] Advanced file processing (PDFs, images, code)
 - [ ] Conversation export and sharing
@@ -778,6 +785,91 @@ You → Copy → Publish → Mark done (2 min)
 - [ ] Voice input/output support
 - [ ] Mobile app (React Native)
 - [ ] API for external integrations
+
+## 🎬 Reel/Video Scenario Editor
+
+The platform now includes a sophisticated two-stage reel generation workflow that allows users to edit and refine their content BEFORE final generation.
+
+### Features
+
+1. **Two-Stage Generation**
+   - Stage 1: Generate draft scenario with AI
+   - Stage 2: User edits scenario with validation
+   - Stage 3: Generate optimized final reel
+
+2. **Scenario Editor**
+   - Editable hook, body, and CTA fields
+   - Key moments timeline editor
+   - Visual suggestions (format, music vibe)
+   - Live character counts and validation
+   - Real-time quality score (0-100)
+
+3. **Validation System**
+   - Hook length: 3-10 seconds (30-150 chars, 6-30 words)
+   - Key moments timing validation
+   - CTA clarity checks
+   - AI-powered improvement suggestions
+
+4. **API Endpoints**
+   - `POST /api/content/draft-reel` - Generate draft scenario
+   - `PUT /api/content/draft-reel/[draftId]` - Update scenario
+   - `POST /api/content/finalize-reel` - Generate final reel
+   - `GET /api/content/draft-reel/[draftId]` - Get scenario state
+
+5. **Version History**
+   - Track all edits in edit_history
+   - Compare original vs edited scenario
+   - Quality score progression
+
+### Usage
+
+1. **Create Reel from Pain Point**
+   - Select "Create Reel" option
+   - Choose tone and goal
+   - Click "Generate Draft Scenario"
+
+2. **Edit Scenario**
+   - Review AI-generated draft
+   - Edit hook, body, CTA
+   - Adjust key moments timeline
+   - Modify visual suggestions
+   - See real-time validation feedback
+
+3. **Finalize**
+   - Save all changes
+   - Click "Finalize & Generate Reel"
+   - AI optimizes based on edits
+   - Copy final content to clipboard
+
+### Quality Score
+
+The system calculates a quality score (0-100) based on:
+- Hook quality (+20 max)
+- Key moments quality (+15 max)
+- CTA quality (+15 max)
+- Visual suggestions (+10 max)
+- Hashtags (+10 max)
+- Warnings penalty (-5 each)
+
+See `REEL_EDITOR_DOCUMENTATION.md` for detailed technical documentation.
+## 📝 Long-form Content Editor
+
+The platform now includes a powerful iterative editing system for newsletter and deep post content. See [LONG_FORM_EDITOR.md](./LONG_FORM_EDITOR.md) for complete documentation.
+
+**Key Features:**
+- **Section-by-section editing**: Edit hook, body, CTA, and visual suggestions independently
+- **AI-powered refinement**: Give natural language instructions like "Make this more funny" or "Simplify language"
+- **Version tracking**: Every change creates a new version with full history
+- **Live preview**: See changes in real-time
+- **Version comparison**: Compare any two versions side-by-side
+- **Restore capability**: Revert to any previous version
+
+**Quick Start:**
+1. Create newsletter or deep_post content from a pain point
+2. Opens in long-form editor with initial sections generated
+3. Click ✏️ to manually edit or ✨ to AI-refine any section
+4. View version history and compare changes
+5. Mark as ready when complete
 
 ## 🤝 Contributing
 
