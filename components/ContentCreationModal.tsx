@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
   Dialog,
   DialogContent,
@@ -357,11 +358,12 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                     <Card>
                       <CardContent className="pt-4">
                         <Label className="text-xs text-gray-500 mb-2 block">Generated Meme Image</Label>
-                        <div className="relative">
-                          <img 
+                        <div className="relative w-full aspect-square">
+                          <Image 
                             src={memeImage.image_url} 
                             alt="Generated meme"
-                            className="w-full rounded-lg border"
+                            fill
+                            className="rounded-lg border object-cover"
                           />
                           <Badge className="absolute top-2 right-2">
                             v{memeImage.version}
@@ -423,11 +425,14 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                               }`}
                               onClick={() => selectVersion(version)}
                             >
-                              <img
-                                src={version.image_url}
-                                alt={`Version ${version.version}`}
-                                className="w-24 h-24 object-cover rounded"
-                              />
+                              <div className="relative w-24 h-24">
+                                <Image
+                                  src={version.image_url}
+                                  alt={`Version ${version.version}`}
+                                  fill
+                                  className="object-cover rounded"
+                                />
+                              </div>
                               <p className="text-xs text-center mt-1">v{version.version}</p>
                               {version.refinement_prompt && (
                                 <p className="text-xs text-gray-500 text-center truncate w-24">
