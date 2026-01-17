@@ -2,6 +2,36 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 
+interface VideoRecommendation {
+  recommended_type: 'text_only' | 'talking_head'
+  recommended_engine: 'remotion' | 'creatomate' | 'd-id' | 'heygen'
+  text_only_score: number
+  talking_head_score: number
+  reasoning: string
+  key_factors: string[]
+  estimated_cost: number
+  estimated_time_seconds: number
+  analyzed_at?: string
+}
+
+interface ContentDraft {
+  id: string
+  content_type: string
+  tone?: string
+  goal?: string
+  hook?: string
+  body?: string
+  agents: {
+    space_id: string
+    spaces: {
+      user_id: string
+    }
+  }
+  pain_point?: {
+    sentiment: string
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { draftId } = await request.json()
@@ -33,13 +63,14 @@ export async function POST(request: Request) {
       .eq('id', draftId)
     
     return NextResponse.json({ success: true, recommendation })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Video recommendation failed'
     console.error('Video recommendation error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
-async function analyzeForVideoFormat(draft: any) {
+async function analyzeForVideoFormat(draft: ContentDraft): Promise<VideoRecommendation> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   
   const bodyLength = draft.body?.length || 0
@@ -101,7 +132,11 @@ Recommend the best video format and engine.`
     response_format: { type: 'json_object' }
   })
   
-  const result = JSON.parse(completion.choices[0].message.content || '{}')
+  if (!completion.choices?.length || !completion.choices[0].message.content) {
+    throw new Error('No recommendation generated from OpenAI')
+  }
+  
+  const result = JSON.parse(completion.choices[0].message.content) as VideoRecommendation
   
   // Add timestamp
   result.analyzed_at = new Date().toISOString()
