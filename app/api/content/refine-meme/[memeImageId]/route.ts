@@ -15,11 +15,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
  */
 export async function POST(
   request: Request,
-  { params }: { params: { memeImageId: string } }
+  context: { params: Promise<{ memeImageId: string }> }
 ) {
   try {
     const { refinementPrompt } = await request.json()
-    const { memeImageId } = params
+    const { memeImageId } = await context.params
     
     if (!refinementPrompt || refinementPrompt.trim().length === 0) {
       return NextResponse.json({ error: 'Refinement prompt is required' }, { status: 400 })
