@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
 /**
  * POST /api/content/refine-meme/[memeImageId]
@@ -35,10 +34,6 @@ export async function POST(
     // Validate API keys
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
-    }
-    
-    if (!process.env.GOOGLE_AI_API_KEY) {
-      return NextResponse.json({ error: 'Google AI API key not configured' }, { status: 500 })
     }
     
     // Get existing meme image with authorization check
@@ -105,13 +100,13 @@ export async function POST(
     
     // Step 3: Upload to Supabase Storage
     const timestamp = Date.now()
-    const storagePath = `${agentId}/${contentDraftId}/${timestamp}.png`
+    const storagePath = `${agentId}/${contentDraftId}/${timestamp}.svg`
     
     console.log('Uploading refined image to Supabase Storage...')
     const { error: storageError } = await supabase.storage
       .from('meme-images')
       .upload(storagePath, Buffer.from(imageData, 'base64'), {
-        contentType: 'image/png',
+        contentType: 'image/svg+xml',
         cacheControl: '3600'
       })
     
@@ -142,9 +137,10 @@ export async function POST(
         refinement_prompt: refinementPrompt,
         raw_image_data: {
           generated_at: new Date().toISOString(),
-          model: 'gemini-pro-vision',
+          model: 'placeholder-svg',
           concept: refinedConcept,
-          refined_from: memeImageId
+          refined_from: memeImageId,
+          note: 'Using placeholder image generation. Integrate Imagen API or DALL-E for production.'
         }
       })
       .select()
@@ -258,13 +254,12 @@ Modify the meme concept accordingly. Keep what works, improve what the user aske
 
 /**
  * Generate meme image using Google AI Gemini
+ * Note: This is currently a PLACEHOLDER implementation
+ * For production, integrate Imagen API, DALL-E, or similar service
  */
 async function generateMemeImage({ concept }: any): Promise<string> {
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
-  
-  try {
-    // Construct detailed image prompt
-    const imagePrompt = `Create a ${concept.meme_format !== 'Custom' ? concept.meme_format + ' style' : ''} meme image.
+  // Construct detailed image prompt for logging
+  const imagePrompt = `Create a ${concept.meme_format !== 'Custom' ? concept.meme_format + ' style' : ''} meme image.
 
 Visual Description: ${concept.image_description}
 
@@ -272,18 +267,98 @@ Text to include:
 - Top: "${concept.top_text}"
 - Bottom: "${concept.bottom_text}"
 
-Style: Modern meme aesthetic, bold sans-serif font (Impact or similar), white text with black stroke, high contrast, social media optimized (1080x1080 square format).
+Style: Modern meme aesthetic, bold sans-serif font (Impact or similar), white text with black stroke, high contrast, social media optimized (1080x1080 square format).`
 
-Make it eye-catching, funny, and shareable on Instagram/social media.`
-
-    console.log('Image generation prompt:', imagePrompt)
+  console.log('Image generation prompt:', imagePrompt)
+  
+  // PLACEHOLDER: Generate a simple text-based meme image
+  // In production, replace this with actual Imagen API, DALL-E, or similar
+  console.warn('Using placeholder image generation. For production, integrate Imagen API or DALL-E.')
+  
+  try {
+    // Create a simple SVG-based meme image as placeholder
+    const width = 1080
+    const height = 1080
     
-    // For now, throw error as placeholder
-    // In production, replace with actual Imagen API call
-    throw new Error('Google AI image generation not yet fully integrated. Please configure Imagen API.')
+    // Generate a simple gradient background based on meme format
+    const colors = getColorScheme(concept.meme_format || 'Custom')
+    
+    const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:${colors.start};stop-opacity:1" />
+          <stop offset="100%" style="stop-color:${colors.end};stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#grad)"/>
+      
+      <!-- Top Text -->
+      <text x="${width/2}" y="150" 
+            font-family="Impact, Arial Black, sans-serif" 
+            font-size="72" 
+            font-weight="bold"
+            fill="white" 
+            stroke="black" 
+            stroke-width="3"
+            text-anchor="middle"
+            style="text-transform: uppercase;">
+        ${escapeXml(concept.top_text)}
+      </text>
+      
+      <!-- Bottom Text -->
+      <text x="${width/2}" y="${height - 100}" 
+            font-family="Impact, Arial Black, sans-serif" 
+            font-size="72" 
+            font-weight="bold"
+            fill="white" 
+            stroke="black" 
+            stroke-width="3"
+            text-anchor="middle"
+            style="text-transform: uppercase;">
+        ${escapeXml(concept.bottom_text)}
+      </text>
+      
+      <!-- Watermark -->
+      <text x="${width/2}" y="${height/2}" 
+            font-family="Arial, sans-serif" 
+            font-size="24" 
+            fill="rgba(255,255,255,0.3)"
+            text-anchor="middle">
+        Placeholder Meme - Integrate Imagen API
+      </text>
+    </svg>`
+    
+    // Convert SVG to base64
+    const base64 = Buffer.from(svg).toString('base64')
+    return base64
     
   } catch (error: any) {
-    console.error('Google AI image generation error:', error)
+    console.error('Placeholder image generation error:', error)
     throw new Error(`Image generation failed: ${error.message}`)
   }
+}
+
+/**
+ * Get color scheme based on meme format
+ */
+function getColorScheme(format: string): { start: string; end: string } {
+  const schemes: Record<string, { start: string; end: string }> = {
+    'Drake': { start: '#1a1a2e', end: '#16213e' },
+    'Distracted Boyfriend': { start: '#e94560', end: '#0f3460' },
+    'Custom': { start: '#4a148c', end: '#6a1b9a' },
+    'default': { start: '#2c3e50', end: '#3498db' }
+  }
+  return schemes[format] || schemes['default']
+}
+
+/**
+ * Escape XML special characters
+ */
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
 }

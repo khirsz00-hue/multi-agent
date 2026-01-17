@@ -88,13 +88,18 @@ Ensure these are set in your `.env.local`:
 ```bash
 # Required
 OPENAI_API_KEY=sk-...
-GOOGLE_AI_API_KEY=...
 
-# Supabase
+# Optional (for production image generation)
+GOOGLE_AI_API_KEY=...  # Only needed if using Imagen API
+# OR use DALL-E (no separate key needed, uses OPENAI_API_KEY)
+
+# Supabase (Required)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
+
+**Note:** The system will work with just `OPENAI_API_KEY` for concept generation. It uses a placeholder SVG image generator for memes. For production-quality images, integrate Imagen API or DALL-E.
 
 ## Google AI Image Generation
 
