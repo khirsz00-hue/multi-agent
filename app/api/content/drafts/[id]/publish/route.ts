@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+type RouteContext = {
+  params: Promise<{ id: string }>
+}
+
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ) {
   try {
+    const params = await context.params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
@@ -16,11 +21,17 @@ export async function POST(
     // Verify ownership
     const { data: draft } = await supabase
       .from('content_drafts')
-      .select('*, agents!inner(spaces!inner(user_id))')
+      .select('*, agents!inner(space_id, spaces!inner(user_id))')
       .eq('id', params.id)
       .single()
     
-    if (!draft || draft.agents.spaces.user_id !== user.id) {
+    if (!draft) {
+      return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+    }
+    
+    // Check user ownership
+    const draftData = draft as any
+    if (draftData.agents?.spaces?.user_id !== user.id) {
       return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
     }
     
