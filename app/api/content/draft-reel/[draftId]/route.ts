@@ -11,9 +11,10 @@ interface EditRecord {
 
 export async function PUT(
   request: Request,
-  { params }: { params: { draftId: string } }
+  context: { params: Promise<{ draftId: string }> }
 ) {
   try {
+    const params = await context.params
     const { updatedScenario, changedFields } = await request.json()
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -95,9 +96,10 @@ export async function PUT(
 
 export async function GET(
   request: Request,
-  { params }: { params: { draftId: string } }
+  context: { params: Promise<{ draftId: string }> }
 ) {
   try {
+    const params = await context.params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     

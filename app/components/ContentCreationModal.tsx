@@ -245,7 +245,7 @@ export function ContentCreationModal({
                   </p>
                   {currentRecommendation.hook_suggestion && (
                     <p className="text-sm text-blue-600 mt-2 italic">
-                      💡 Suggested hook: &quot;{currentRecommendation.hook_suggestion}&quot;
+                      💡 Suggested hook: &ldquo;{currentRecommendation.hook_suggestion}&rdquo;
                     </p>
                   )}
                 </div>
@@ -271,7 +271,7 @@ export function ContentCreationModal({
                       Draft Scenario Generated!
                     </p>
                     <p className="text-sm text-green-700 mt-1">
-                      Review and edit the scenario below before finalizing. Make any changes you want, then click "Finalize" to generate the optimized reel.
+                      Review and edit the scenario below before finalizing. Make any changes you want, then click &ldquo;Finalize&rdquo; to generate the optimized reel.
                     </p>
                   </div>
                 </div>

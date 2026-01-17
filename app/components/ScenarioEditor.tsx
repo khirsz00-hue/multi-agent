@@ -231,7 +231,7 @@ export function ScenarioEditor({
           placeholder="What action do you want viewers to take?"
         />
         <p className="text-xs text-gray-500 mt-1">
-          Questions work best: "Have you experienced this?" or "Tag someone who needs this!"
+          Questions work best: &ldquo;Have you experienced this?&rdquo; or &ldquo;Tag someone who needs this!&rdquo;
         </p>
       </div>
       
