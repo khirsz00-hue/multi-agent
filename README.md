@@ -32,6 +32,7 @@ The agents work in a coordinated flow:
 - **Multi-Agent Dashboard**: Unified view of all agents working together
 - **Email Notifications**: Daily reminders with content ready to publish
 - **Multi-LLM Provider**: Support for OpenAI, Anthropic (Claude), Google (Gemini), and Ollama
+- **Meme Generation**: AI-powered meme creation with iterative refinement (see [docs/MEME_GENERATION.md](docs/MEME_GENERATION.md))
 - **File Upload & Processing**: Upload documents and leverage RAG (Retrieval Augmented Generation)
 - **Intelligent Chat**: Conversational interface with context-aware responses
 - **Vector Search**: Semantic search using pgvector for relevant information retrieval
@@ -770,6 +771,11 @@ You → Copy → Publish → Mark done (2 min)
 - [x] Email notification system
 - [x] Daily reminder cron job
 - [x] Two-stage reel/video scenario editor
+- [x] Long-form Content Editor (Newsletter & Deep Post)
+  - [x] Section-by-section editing (hook, body, cta, visual_suggestions)
+  - [x] AI-powered section refinement with instructions
+  - [x] Version tracking and comparison
+  - [x] Restore previous versions
 - [ ] Multi-user collaboration in spaces
 - [ ] Advanced file processing (PDFs, images, code)
 - [ ] Conversation export and sharing
@@ -846,6 +852,24 @@ The system calculates a quality score (0-100) based on:
 - Warnings penalty (-5 each)
 
 See `REEL_EDITOR_DOCUMENTATION.md` for detailed technical documentation.
+## 📝 Long-form Content Editor
+
+The platform now includes a powerful iterative editing system for newsletter and deep post content. See [LONG_FORM_EDITOR.md](./LONG_FORM_EDITOR.md) for complete documentation.
+
+**Key Features:**
+- **Section-by-section editing**: Edit hook, body, CTA, and visual suggestions independently
+- **AI-powered refinement**: Give natural language instructions like "Make this more funny" or "Simplify language"
+- **Version tracking**: Every change creates a new version with full history
+- **Live preview**: See changes in real-time
+- **Version comparison**: Compare any two versions side-by-side
+- **Restore capability**: Revert to any previous version
+
+**Quick Start:**
+1. Create newsletter or deep_post content from a pain point
+2. Opens in long-form editor with initial sections generated
+3. Click ✏️ to manually edit or ✨ to AI-refine any section
+4. View version history and compare changes
+5. Mark as ready when complete
 
 ## 🤝 Contributing
 
