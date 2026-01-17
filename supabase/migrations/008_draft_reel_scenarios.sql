@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS draft_reel_scenarios (
   --   }
   -- ]
   
-  -- Final reel reference (after finalization)
+  // Final reel reference (after finalization)
   final_draft_id UUID REFERENCES content_drafts(id) ON DELETE SET NULL,
   
   -- Status tracking

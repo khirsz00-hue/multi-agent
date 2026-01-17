@@ -43,8 +43,10 @@ export function validateHookLength(hook: string): {
   wordCount: number
   issues: string[]
 } {
-  const charCount = hook.trim().length
-  const wordCount = hook.trim().split(/\s+/).length
+  const trimmed = hook.trim()
+  const charCount = trimmed.length
+  // Handle empty strings properly
+  const wordCount = trimmed.length === 0 ? 0 : trimmed.split(/\s+/).filter(w => w.length > 0).length
   const issues: string[] = []
 
   // Character count should be 30-150 for a 3-10 second hook
@@ -124,6 +126,12 @@ export function validateKeyMoments(keyMoments?: Array<{ timing: string; descript
   }
 }
 
+// Common action words that drive engagement
+const CTA_ACTION_WORDS = [
+  'comment', 'share', 'follow', 'save', 'tag', 'dm', 'message', 
+  'visit', 'check', 'click', 'watch', 'join', 'subscribe'
+]
+
 /**
  * Check CTA clarity
  */
@@ -148,8 +156,7 @@ export function validateCTA(cta: string): {
   }
 
   // Check for action words
-  const actionWords = ['comment', 'share', 'follow', 'save', 'tag', 'dm', 'message', 'visit', 'check', 'click', 'watch', 'join', 'subscribe']
-  const hasActionWord = actionWords.some(word => cta.toLowerCase().includes(word))
+  const hasActionWord = CTA_ACTION_WORDS.some(word => cta.toLowerCase().includes(word))
 
   if (!hasActionWord) {
     suggestions.push('Consider adding a clear action word like "comment", "share", "follow", or "save".')

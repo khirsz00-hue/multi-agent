@@ -15,6 +15,12 @@ export async function PUT(
 ) {
   try {
     const params = await context.params
+    
+    // Validate params
+    if (!params.draftId) {
+      return NextResponse.json({ error: 'Draft ID is required' }, { status: 400 })
+    }
+    
     const { updatedScenario, changedFields } = await request.json()
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -100,6 +106,12 @@ export async function GET(
 ) {
   try {
     const params = await context.params
+    
+    // Validate params
+    if (!params.draftId) {
+      return NextResponse.json({ error: 'Draft ID is required' }, { status: 400 })
+    }
+    
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     

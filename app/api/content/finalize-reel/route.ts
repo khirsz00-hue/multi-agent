@@ -46,6 +46,8 @@ export async function POST(request: Request) {
     })
     
     // Save final reel to content_drafts
+    // Note: Using schema from migration 20260116152933_create_content_tables.sql
+    // which has individual fields (hook, body, cta) rather than JSONB 'draft' field
     const { data: finalDraft, error: draftError } = await supabase
       .from('content_drafts')
       .insert({
