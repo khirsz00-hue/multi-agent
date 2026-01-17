@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Loader2, FileText, Twitter } from 'lucide-react'
+import { Loader2, FileText, Twitter, AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { createClient } from '@/lib/supabase/client'
 
 export default function QuickGeneratePage() {
@@ -23,6 +24,7 @@ export default function QuickGeneratePage() {
   const [tone, setTone] = useState('empathetic')
   const [goal, setGoal] = useState('engagement')
   const [additionalNotes, setAdditionalNotes] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadAgents()
@@ -51,11 +53,12 @@ export default function QuickGeneratePage() {
 
   const handleGenerate = async () => {
     if (!selectedAgent || !topic) {
-      alert('Please select an agent and enter a topic')
+      setError('Please select an agent and enter a topic')
       return
     }
 
     setGenerating(true)
+    setError(null)
     try {
       const res = await fetch('/api/content/generate-quick', {
         method: 'POST',
@@ -81,7 +84,7 @@ export default function QuickGeneratePage() {
       router.push(`/quick-editor/${data.draft.id}`)
     } catch (error: any) {
       console.error('Generation error:', error)
-      alert(error.message)
+      setError(error.message)
     } finally {
       setGenerating(false)
     }
@@ -119,6 +122,14 @@ export default function QuickGeneratePage() {
           Generate engagement posts or Twitter threads with AI, then edit them directly
         </p>
       </div>
+
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-6">
         {/* Content Type Selection */}

@@ -106,7 +106,7 @@ export interface ContentDraft {
   content_type: QuickContentType | string;
   tone: string;
   goal: string;
-  draft: EngagementPostContent | ThreadContent | any;
+  draft: EngagementPostContent | ThreadContent | Record<string, unknown>;
   status: 'draft' | 'approved' | 'published' | 'archived';
   created_at: string;
   updated_at: string;

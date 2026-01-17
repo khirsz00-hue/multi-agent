@@ -35,7 +35,8 @@ export default function TwitterThreadEditor({
   const removeTweet = (index: number) => {
     const tweets = [...(content.tweets || [])]
     if (tweets.length <= 2) {
-      alert('Thread must have at least 2 tweets')
+      // Don't remove if we'd go below 2 tweets - just skip silently
+      // or could set an error state to display
       return
     }
     tweets.splice(index, 1)

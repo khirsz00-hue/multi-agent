@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Loader2, Save, CheckCircle, AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import EngagementPostEditor from './EngagementPostEditor'
 import TwitterThreadEditor from './TwitterThreadEditor'
 
@@ -25,6 +26,7 @@ export default function QuickContentEditor({
   const [saving, setSaving] = useState(false)
   const [validation, setValidation] = useState<any>(null)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadDraft()
@@ -33,6 +35,7 @@ export default function QuickContentEditor({
 
   const loadDraft = async () => {
     setLoading(true)
+    setError(null)
     try {
       const res = await fetch(`/api/content/quick-preview/${draftId}`)
       if (!res.ok) throw new Error('Failed to load draft')
@@ -41,7 +44,7 @@ export default function QuickContentEditor({
       await validateDraft(data.draft)
     } catch (error: any) {
       console.error('Error loading draft:', error)
-      alert(error.message)
+      setError(error.message)
     } finally {
       setLoading(false)
     }
@@ -79,6 +82,7 @@ export default function QuickContentEditor({
 
   const handleSave = async () => {
     setSaving(true)
+    setError(null)
     try {
       const res = await fetch(`/api/content/quick-edit/${draftId}`, {
         method: 'PUT',
@@ -92,7 +96,7 @@ export default function QuickContentEditor({
       onSave?.()
     } catch (error: any) {
       console.error('Save error:', error)
-      alert(error.message)
+      setError(error.message)
     } finally {
       setSaving(false)
     }
@@ -108,14 +112,30 @@ export default function QuickContentEditor({
 
   if (!draft) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">Draft not found</p>
+      <div className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <div className="text-center py-12">
+          <p className="text-gray-500">Draft not found</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
