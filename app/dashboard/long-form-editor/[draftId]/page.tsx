@@ -5,7 +5,7 @@ import LongFormEditor from '@/components/LongFormEditor'
 export default async function LongFormEditorPage({
   params
 }: {
-  params: { draftId: string }
+  params: Promise<{ draftId: string }>
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -14,9 +14,11 @@ export default async function LongFormEditorPage({
     redirect('/login')
   }
   
+  const { draftId } = await params
+  
   return (
     <div className="min-h-screen bg-gray-50">
-      <LongFormEditor draftId={params.draftId} />
+      <LongFormEditor draftId={draftId} />
     </div>
   )
 }
