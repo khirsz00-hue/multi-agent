@@ -162,6 +162,10 @@ Style: Clean, modern, social-media ready. Include clear text overlays in Impact 
     response_format: 'b64_json'
   })
   
+  if (!imageResponse.data || !imageResponse.data[0]) {
+    throw new Error('No image data returned from DALL-E')
+  }
+  
   const b64Image = imageResponse.data[0].b64_json
   if (!b64Image) throw new Error('No image generated')
   

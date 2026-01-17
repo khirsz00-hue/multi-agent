@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
   Dialog,
   DialogContent,
@@ -327,11 +328,15 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                       <div className="space-y-3">
                         <Card>
                           <CardContent className="pt-4">
-                            <img
-                              src={memeImage.image_url}
-                              alt="Generated meme"
-                              className="w-full rounded-lg"
-                            />
+                            <div className="relative w-full aspect-square">
+                              <Image
+                                src={memeImage.image_url}
+                                alt="Generated meme"
+                                fill
+                                className="rounded-lg object-cover"
+                                unoptimized
+                              />
+                            </div>
                             <div className="mt-3 space-y-2">
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-gray-600">Format:</span>
