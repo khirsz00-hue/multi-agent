@@ -63,7 +63,11 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
     
     setLoading(true)
     try {
-      const res = await fetch('/api/content/generate', {
+      // Use long-form generation for newsletter and deep_post
+      const isLongForm = ['newsletter', 'deep_post'].includes(selectedType)
+      const endpoint = isLongForm ? '/api/content/generate-long-form' : '/api/content/generate'
+      
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -76,7 +80,14 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
       if (!res.ok) throw new Error('Failed to generate content')
       
       const data = await res.json()
-      setGeneratedContent(data.draft)
+      
+      // For long-form content, redirect to editor
+      if (isLongForm && data.draft?.id) {
+        router.push(`/dashboard/long-form-editor/${data.draft.id}`)
+        onClose()
+      } else {
+        setGeneratedContent(data.draft)
+      }
     } catch (error: any) {
       alert(error.message)
     } finally {
