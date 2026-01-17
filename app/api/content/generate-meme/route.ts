@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import OpenAI from 'openai'
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 
@@ -140,12 +139,7 @@ Make it relatable, funny, and shareable.`
 }
 
 async function generateMemeImage(memeContent: any) {
-  if (!process.env.GOOGLE_AI_API_KEY) {
-    throw new Error('GOOGLE_AI_API_KEY not configured')
-  }
-  
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY)
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   
   // Create a detailed prompt for image generation
   const imagePrompt = `Create a meme image: ${memeContent.prompt}
@@ -156,14 +150,6 @@ Bottom text overlay: "${memeContent.bottom_text}"
 
 Style: Clean, modern, social-media ready. Include clear text overlays in Impact font style. High contrast, easy to read. Professional meme aesthetic.`
 
-  // Note: Gemini 1.5 Flash doesn't directly generate images, only text
-  // We'll use a workaround by generating a detailed description and then
-  // use a simpler approach or placeholder
-  // For production, you'd want to use a proper image generation API like DALL-E
-  
-  // Generate with OpenAI DALL-E instead
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  
   const imageResponse = await openai.images.generate({
     model: 'dall-e-3',
     prompt: imagePrompt,

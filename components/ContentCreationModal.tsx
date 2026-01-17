@@ -245,7 +245,7 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                                   </div>
                                   <p className="text-sm text-gray-600">{rec.reasoning}</p>
                                   <p className="text-xs text-gray-500 mt-1 italic">
-                                    &ldquo;{rec.hook_suggestion}&rdquo;
+                                    {`"${rec.hook_suggestion}"`}
                                   </p>
                                 </div>
                               </div>
@@ -355,7 +355,7 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                           <CardContent className="pt-4 space-y-3">
                             <Label>Refine Meme Image</Label>
                             <p className="text-xs text-gray-500">
-                              Request changes like &ldquo;Add a dog&rdquo;, &ldquo;Change colors to blue&rdquo;, etc.
+                              Request changes like &quot;Add a dog&quot;, &quot;Change colors to blue&quot;, etc.
                             </p>
                             <Input
                               placeholder="e.g., Make it funnier, change background color..."

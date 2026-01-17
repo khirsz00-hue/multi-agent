@@ -33,8 +33,9 @@ Add the following to your `.env.local`:
 
 ```bash
 # Required for meme image generation
+# - GPT-4 for meme concept generation
+# - DALL-E 3 for image creation
 OPENAI_API_KEY=sk-...
-GOOGLE_AI_API_KEY=...  # Optional (currently using DALL-E)
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
