@@ -140,13 +140,14 @@ export function ContentCreationModal({
     }
     
     const timer = setTimeout(() => {
-      if (generatedContent && draftId) {
+      // Auto-save when there's content (either generatedContent or in edit mode)
+      if ((generatedContent || editMode) && draftId) {
         saveDraft(false)
       }
     }, 3000) // Auto-save after 3 seconds of inactivity
     
     setAutoSaveTimer(timer)
-  }, [generatedContent, draftId, autoSaveTimer, saveDraft])
+  }, [generatedContent, editMode, draftId, autoSaveTimer, saveDraft])
   
   // Cleanup timer on unmount
   useEffect(() => {
@@ -326,7 +327,7 @@ export function ContentCreationModal({
     
     // Mark as published
     try {
-      await fetch('/api/content/drafts/' + draftId + '/publish', {
+      await fetch(`/api/content/drafts/${draftId}/publish`, {
         method: 'POST'
       })
       
@@ -831,7 +832,7 @@ export function ContentCreationModal({
                     </span>
                   </div>
                   <p className="text-gray-600 line-clamp-2">
-                    {version.content?.hook || 'No hook'}
+                    {version.content?.hook || 'Untitled version'}
                   </p>
                 </div>
               ))}

@@ -21,7 +21,7 @@ export async function POST(
     // Verify ownership
     const { data: draft } = await supabase
       .from('content_drafts')
-      .select('*, agents!inner(space_id, spaces!inner(user_id))')
+      .select('*, agents!inner(spaces!inner(user_id))')
       .eq('id', params.id)
       .single()
     

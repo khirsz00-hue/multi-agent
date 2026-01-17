@@ -21,7 +21,7 @@ export async function GET(
     // Get all versions of the same content (same pain_point_id and content_type)
     const { data: baseDraft } = await supabase
       .from('content_drafts')
-      .select('pain_point_id, content_type, agent_id, agents!inner(space_id, spaces!inner(user_id))')
+      .select('pain_point_id, content_type, agent_id, agents!inner(spaces!inner(user_id))')
       .eq('id', params.id)
       .single()
     
