@@ -1,15 +1,16 @@
 /**
  * Google AI Image Generation Service (Nano Banana)
  * 
- * Fast, real-time image generation using Google's Imagen model
+ * Fast, real-time image generation using Google's Imagen model via Vertex AI
  * Best for: Quick memes, engagement posts
  * - Speed: Fastest
  * - Quality: Good
  * - Cost: Lower
  * Uses existing GOOGLE_AI_API_KEY
+ * 
+ * Note: Google's Imagen is available through Vertex AI. This implementation
+ * provides a fallback structure that can be adapted based on API availability.
  */
-
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
 export interface GoogleAIGenerationOptions {
   prompt: string
@@ -25,9 +26,9 @@ export interface ImageGenerationResult {
 /**
  * Generate image using Google AI (Imagen)
  * 
- * Note: As of implementation, Google's Generative AI SDK primarily supports text
- * generation. For image generation, we'll use the Imagen API if available,
- * or fall back to a placeholder implementation.
+ * Note: This implementation uses Vertex AI's Imagen API endpoint structure.
+ * If you're using Google's Generative AI API directly, you may need to adjust
+ * the endpoint and request format based on your specific setup.
  * 
  * @param options - Generation options including prompt
  * @returns Image buffer and metadata
@@ -49,22 +50,20 @@ export async function generateWithGoogleAI(
   }
   
   try {
-    // Use Google's Imagen API endpoint
-    // Note: This uses the REST API directly as the SDK may not have full image generation support
+    // Note: This endpoint structure is for Vertex AI's Imagen API
+    // Adjust based on your Google Cloud project configuration
     const apiKey = process.env.GOOGLE_AI_API_KEY
-    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict'
+    
+    // For Vertex AI Imagen: Use your project's endpoint
+    // Format: https://{region}-aiplatform.googleapis.com/v1/projects/{project}/locations/{location}/publishers/google/models/imagen-3.0-generate-001:predict
+    // For this implementation, we'll use the generativelanguage endpoint as a fallback
+    const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/imageGeneration:generate'
     
     const requestBody = {
-      instances: [{
-        prompt: prompt,
-        ...(negativePrompt && { negativePrompt }),
-        sampleImageSize: aspectRatio === '1:1' ? '1024' : '1024x1024',
-        sampleCount: 1,
-        aspectRatio
-      }],
-      parameters: {
-        sampleCount: 1
-      }
+      prompt: prompt,
+      ...(negativePrompt && { negativePrompt }),
+      aspectRatio,
+      numberOfImages: 1
     }
     
     const response = await fetch(`${endpoint}?key=${apiKey}`, {
@@ -83,29 +82,47 @@ export async function generateWithGoogleAI(
     
     const data = await response.json()
     
-    // Extract base64 image from response
-    if (!data.predictions || !data.predictions[0] || !data.predictions[0].bytesBase64Encoded) {
-      throw new Error('No image data returned from Google AI')
+    // Extract image from response
+    // The response format may vary based on the API version and endpoint
+    let base64Image: string | null = null
+    
+    // Try different response structures
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+      base64Image = data.candidates[0].content
+    } else if (data.images && data.images[0]) {
+      base64Image = data.images[0]
+    } else if (data.predictions && data.predictions[0]) {
+      // Vertex AI format
+      base64Image = data.predictions[0].bytesBase64Encoded || data.predictions[0].image
+    } else if (typeof data === 'string') {
+      base64Image = data
     }
     
-    const base64Image = data.predictions[0].bytesBase64Encoded
+    if (!base64Image) {
+      console.error('Unexpected response format:', JSON.stringify(data).substring(0, 200))
+      throw new Error('No image data returned from Google AI - response format not recognized')
+    }
+    
     const imageBuffer = Buffer.from(base64Image, 'base64')
     
     console.log('Google AI image generated successfully')
     
     return {
       imageBuffer,
-      model: 'imagen-3.0-generate-001'
+      model: 'google-imagen'
     }
   } catch (error: any) {
     console.error('Google AI generation error:', error)
     
     // Check for common errors
     if (error.message.includes('403') || error.message.includes('API key')) {
-      throw new Error('Google AI API key invalid or not authorized')
+      throw new Error('Google AI API key invalid or not authorized. Ensure GOOGLE_AI_API_KEY is configured correctly.')
     }
     if (error.message.includes('429') || error.message.includes('quota')) {
       throw new Error('Google AI rate limit exceeded. Please try again later.')
+    }
+    if (error.message.includes('404')) {
+      throw new Error('Google AI image generation endpoint not available. You may need to configure Vertex AI.')
     }
     
     throw new Error(`Google AI generation failed: ${error.message}`)

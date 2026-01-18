@@ -6,6 +6,9 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+// Storage configuration
+const STORAGE_BUCKET = 'meme-images'
+
 export interface StorageUploadResult {
   publicUrl: string
   storagePath: string
@@ -44,13 +47,13 @@ export async function uploadImageToStorage(
   const timestamp = Date.now()
   const randomId = Math.random().toString(36).substring(7)
   const extension = contentType === 'image/jpeg' ? 'jpg' : 'png'
-  const storagePath = `meme-images/${agentId}/${timestamp}-${randomId}.${extension}`
+  const storagePath = `${STORAGE_BUCKET}/${agentId}/${timestamp}-${randomId}.${extension}`
   
   console.log('Uploading image to Supabase Storage:', storagePath)
   
   // Upload to storage
   const { error: storageError } = await supabaseAdmin.storage
-    .from('meme-images')
+    .from(STORAGE_BUCKET)
     .upload(storagePath, imageBuffer, {
       contentType,
       cacheControl: '3600',
@@ -64,7 +67,7 @@ export async function uploadImageToStorage(
   
   // Get public URL
   const { data: { publicUrl } } = supabaseAdmin.storage
-    .from('meme-images')
+    .from(STORAGE_BUCKET)
     .getPublicUrl(storagePath)
   
   console.log('Image uploaded successfully, public URL:', publicUrl)
