@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     if (contentDraftId) {
       const { data: contentDraft, error: draftError } = await supabase
         .from('content_drafts')
-        .select('*, agents!inner(space_id, spaces!inner(user_id))')
+        .select('id, agents!inner(space_id, spaces!inner(user_id))')
         .eq('id', contentDraftId)
         .single()
       
