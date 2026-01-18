@@ -85,7 +85,7 @@ export async function GET(
     
     // Verify user owns the content draft
     const draft = task.content_drafts
-    if (!draft || draft.agents?.spaces?.user_id !== user.id) {
+    if (!draft || !draft.agents || !draft.agents.spaces || draft.agents.spaces.user_id !== user.id) {
       return NextResponse.json({ 
         error: 'Unauthorized access to this task' 
       }, { status: 403 })
