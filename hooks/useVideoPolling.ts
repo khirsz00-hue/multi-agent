@@ -96,25 +96,38 @@ export function useVideoPolling({
 
     // Initial fetch
     const startPolling = async () => {
-      const status = await fetchStatus()
-      
-      // Only set up polling if task is not complete or failed
-      if (status === 'completed' || status === 'failed') {
-        return
-      }
-      
-      // Set up polling interval
-      intervalRef.current = setInterval(async () => {
-        const currentStatus = await fetchStatus()
+      try {
+        const status = await fetchStatus()
         
-        // Stop polling if task is complete or failed
-        if (currentStatus === 'completed' || currentStatus === 'failed') {
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current)
-            intervalRef.current = null
-          }
+        // Only set up polling if task is not complete or failed
+        if (status === 'completed' || status === 'failed') {
+          return
         }
-      }, pollingInterval)
+        
+        // Set up polling interval
+        intervalRef.current = setInterval(async () => {
+          try {
+            const currentStatus = await fetchStatus()
+            
+            // Stop polling if task is complete or failed
+            if (currentStatus === 'completed' || currentStatus === 'failed') {
+              if (intervalRef.current) {
+                clearInterval(intervalRef.current)
+                intervalRef.current = null
+              }
+            }
+          } catch (error) {
+            console.error('Polling error:', error)
+            // Clear interval on persistent errors
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current)
+              intervalRef.current = null
+            }
+          }
+        }, pollingInterval)
+      } catch (error) {
+        console.error('Initial fetch error:', error)
+      }
     }
     
     startPolling()

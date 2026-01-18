@@ -41,6 +41,11 @@ export default function VideoGenerationModal({
         setVideoPreviewUrl(completedTask.video_url)
         onVideoReady?.(completedTask.video_url)
         
+        // Clear any existing timer before setting new one
+        if (autoCloseTimer) {
+          clearTimeout(autoCloseTimer)
+        }
+        
         // Auto-close after 3 seconds on completion
         const timer = setTimeout(() => {
           handleClose()

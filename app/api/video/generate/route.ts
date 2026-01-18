@@ -26,23 +26,11 @@ export async function POST(request: Request) {
     // Get or create video recommendation
     let videoRecommendation = draft.ai_video_recommendation
     if (!videoRecommendation) {
-      // Get recommendation from the recommend API
-      const recommendResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/video/recommend`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ draftId })
-      })
-      
-      if (recommendResponse.ok) {
-        const recommendData = await recommendResponse.json()
-        videoRecommendation = recommendData.recommendation
-      } else {
-        // Default recommendation if API fails
-        videoRecommendation = {
-          recommended_type: 'text_only',
-          recommended_engine: 'remotion',
-          estimated_time_seconds: 60
-        }
+      // Default recommendation if not already present
+      videoRecommendation = {
+        recommended_type: 'text_only',
+        recommended_engine: 'remotion',
+        estimated_time_seconds: 60
       }
     }
 
@@ -76,8 +64,17 @@ export async function POST(request: Request) {
     // For now, we'll simulate it by updating the task status
     // This would typically be handled by a background worker or queue
     // Fire and forget intentionally - background processing
-    simulateVideoGeneration(task.id, supabase).catch(err => {
+    simulateVideoGeneration(task.id, supabase).catch(async (err) => {
       console.error('Background video generation error:', err)
+      // Update task status to failed on error
+      await supabase
+        .from('video_generation_tasks')
+        .update({ 
+          status: 'failed',
+          error_message: err.message || 'Video generation failed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', task.id)
     })
 
     return NextResponse.json({ 

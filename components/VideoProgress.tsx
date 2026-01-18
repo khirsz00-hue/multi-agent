@@ -3,6 +3,7 @@
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { formatTimeRemaining } from '@/lib/utils'
 
 interface VideoProgressProps {
   status: 'queued' | 'processing' | 'completed' | 'failed'
@@ -55,9 +56,7 @@ export default function VideoProgress({
         return 'Your video is queued...'
       case 'processing':
         const engineName = getEngineDisplayName(engine)
-        const timeMsg = estimatedTime 
-          ? ` ${Math.floor(estimatedTime / 60)}:${String(estimatedTime % 60).padStart(2, '0')} remaining`
-          : ''
+        const timeMsg = estimatedTime ? ` ${formatTimeRemaining(estimatedTime)} remaining` : ''
         return `Generating with ${engineName}...${timeMsg}`
       case 'completed':
         return '✅ Done! Processing...'
