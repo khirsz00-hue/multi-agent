@@ -975,11 +975,13 @@ export function ContentCreationModal({
                   {imageUrl && (
                     <div>
                       <h3 className="font-semibold mb-2">✅ Wygenerowany Mem:</h3>
-                      <img 
-                        src={imageUrl} 
-                        alt="Wygenerowany mem" 
-                        className="w-full rounded-lg border-2 border-green-500"
-                      />
+                      <div className="relative w-full aspect-square">
+                        <img 
+                          src={imageUrl} 
+                          alt="Wygenerowany mem" 
+                          className="w-full h-full rounded-lg border-2 border-green-500 object-contain"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
