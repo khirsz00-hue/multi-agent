@@ -31,7 +31,6 @@ export default function AppLayout({ children, user }: AppLayoutProps) {
             aria-label="Toggle navigation menu"
           >
             <Menu className="h-6 w-6" />
-            <span className="sr-only">Toggle menu</span>
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-64">
