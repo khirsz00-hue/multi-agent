@@ -34,11 +34,8 @@ export default function AppLayout({ children, user }: AppLayoutProps) {
             <span className="sr-only">Toggle menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64" aria-describedby="sidebar-description">
+        <SheetContent side="left" className="p-0 w-64">
           <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-          <span id="sidebar-description" className="sr-only">
-            Navigation menu with dashboard, content creation, calendar, analytics, and settings sections
-          </span>
           <Sidebar user={user} />
         </SheetContent>
       </Sheet>

@@ -19,7 +19,8 @@ import {
   User,
   LogOut,
   Plus,
-  Eye
+  Eye,
+  Bot
 } from 'lucide-react'
 import SignOutButton from './SignOutButton'
 
@@ -33,7 +34,7 @@ const menuItems = [
     section: 'Dashboard',
     icon: LayoutDashboard,
     items: [
-      { label: 'My Spaces', href: '/spaces', icon: LayoutDashboard },
+      { label: 'My Spaces', href: '/spaces', icon: TrendingUp },
     ]
   },
   {
@@ -42,7 +43,6 @@ const menuItems = [
     items: [
       { label: 'Generate Meme/Post', href: '/quick-generate', icon: Image },
       { label: 'Generate Reel/Short', href: '/quick-editor', icon: Video },
-      { label: 'Content Calendar', href: '/dashboard/content-calendar', icon: CalendarCheck },
     ]
   },
   {
@@ -66,7 +66,7 @@ const menuItems = [
     icon: Settings,
     items: [
       { label: 'Brand Settings', href: '/settings/brand', icon: Settings },
-      { label: 'Agent Config', href: '/agents', icon: Settings },
+      { label: 'Agent Config', href: '/agents', icon: Bot },
       { label: 'API Keys', href: '/settings/api', icon: Key },
     ]
   },
