@@ -341,8 +341,8 @@ async function handleStaticGeneration({
       },
       status: 'draft',
       // Store top_text and bottom_text separately for reliable extraction
-      _meme_top_text: memeConcept.top_text,
-      _meme_bottom_text: memeConcept.bottom_text
+      meme_top_text: memeConcept.top_text,
+      meme_bottom_text: memeConcept.bottom_text
     }
   } else {
     const content = await generateContent({ painPoint, contentType, options, brandSettings })
@@ -380,8 +380,8 @@ async function handleStaticGeneration({
     console.log(`[Static Generation] Generating meme image with ${imageEngine}`)
     
     // Extract meme concept from draft data (using stored separate fields if available)
-    const topText = draftData._meme_top_text || draftData.body.split('\n')[0]?.replace('Top: ', '') || ''
-    const bottomText = draftData._meme_bottom_text || draftData.body.split('\n')[2]?.replace('Bottom: ', '') || ''
+    const topText = draftData.meme_top_text || draftData.body.split('\n')[0]?.replace('Top: ', '') || ''
+    const bottomText = draftData.meme_bottom_text || draftData.body.split('\n')[2]?.replace('Bottom: ', '') || ''
     
     // Image generation would happen here if implemented
     console.log('[Static Generation] Meme image generation placeholder')
