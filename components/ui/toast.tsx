@@ -18,12 +18,21 @@ interface ToastContextType {
 
 const ToastContext = React.createContext<ToastContextType | undefined>(undefined)
 
+// Fallback UUID generation for older browsers
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  // Fallback to timestamp + random
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<Toast[]>([])
   const timeoutRefs = React.useRef<Map<string, NodeJS.Timeout>>(new Map())
 
   const showToast = React.useCallback((message: string, type: ToastType = 'info') => {
-    const id = crypto.randomUUID()
+    const id = generateId()
     setToasts(prev => [...prev, { id, message, type }])
     
     // Auto-remove after 5 seconds
