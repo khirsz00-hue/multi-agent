@@ -19,11 +19,11 @@ CREATE TABLE IF NOT EXISTS public.video_tasks (
 );
 
 -- Indexes for video_tasks
-CREATE INDEX idx_video_tasks_task_id ON video_tasks(task_id);
-CREATE INDEX idx_video_tasks_engine ON video_tasks(engine);
-CREATE INDEX idx_video_tasks_status ON video_tasks(status);
-CREATE INDEX idx_video_tasks_content_draft ON video_tasks(content_draft_id);
-CREATE INDEX idx_video_tasks_engine_status ON video_tasks(engine, status);
+CREATE INDEX IF NOT EXISTS idx_video_tasks_task_id ON video_tasks(task_id);
+CREATE INDEX IF NOT EXISTS idx_video_tasks_engine ON video_tasks(engine);
+CREATE INDEX IF NOT EXISTS idx_video_tasks_status ON video_tasks(status);
+CREATE INDEX IF NOT EXISTS idx_video_tasks_content_draft ON video_tasks(content_draft_id);
+CREATE INDEX IF NOT EXISTS idx_video_tasks_engine_status ON video_tasks(engine, status);
 
 -- RLS for video_tasks
 ALTER TABLE video_tasks ENABLE ROW LEVEL SECURITY;
@@ -60,11 +60,11 @@ CREATE TABLE IF NOT EXISTS public.image_generations (
 );
 
 -- Indexes for image_generations
-CREATE INDEX idx_image_generations_content_draft ON image_generations(content_draft_id);
-CREATE INDEX idx_image_generations_engine ON image_generations(engine);
-CREATE INDEX idx_image_generations_status ON image_generations(status);
-CREATE INDEX idx_image_generations_parent ON image_generations(parent_generation_id);
-CREATE INDEX idx_image_generations_version ON image_generations(content_draft_id, version DESC);
+CREATE INDEX IF NOT EXISTS idx_image_generations_content_draft ON image_generations(content_draft_id);
+CREATE INDEX IF NOT EXISTS idx_image_generations_engine ON image_generations(engine);
+CREATE INDEX IF NOT EXISTS idx_image_generations_status ON image_generations(status);
+CREATE INDEX IF NOT EXISTS idx_image_generations_parent ON image_generations(parent_generation_id);
+CREATE INDEX IF NOT EXISTS idx_image_generations_version ON image_generations(content_draft_id, version DESC);
 
 -- RLS for image_generations
 ALTER TABLE image_generations ENABLE ROW LEVEL SECURITY;
@@ -85,10 +85,11 @@ USING (
 -- 3. UPDATE CONTENT_DRAFTS TABLE
 -- ============================================
 -- Add new columns for multi-engine support and cost tracking
+-- Note: We add video_task_id as UUID without FK constraint first to avoid circular dependency
 ALTER TABLE content_drafts 
   ADD COLUMN IF NOT EXISTS image_engine VARCHAR(50),
   ADD COLUMN IF NOT EXISTS video_status VARCHAR(50),
-  ADD COLUMN IF NOT EXISTS video_task_id UUID REFERENCES video_tasks(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS video_task_id UUID,
   ADD COLUMN IF NOT EXISTS video_eta TIMESTAMP WITH TIME ZONE,
   ADD COLUMN IF NOT EXISTS generation_cost DECIMAL(10, 4) DEFAULT 0.00;
 
@@ -99,6 +100,22 @@ CREATE INDEX IF NOT EXISTS idx_content_drafts_image_engine ON content_drafts(ima
 CREATE INDEX IF NOT EXISTS idx_content_drafts_video_engine ON content_drafts(video_engine);
 CREATE INDEX IF NOT EXISTS idx_content_drafts_video_status ON content_drafts(video_status);
 CREATE INDEX IF NOT EXISTS idx_content_drafts_video_task_id ON content_drafts(video_task_id);
+
+-- Add foreign key constraint for video_task_id after video_tasks table exists
+-- This avoids circular dependency since video_tasks references content_drafts
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'content_drafts_video_task_id_fkey'
+  ) THEN
+    ALTER TABLE content_drafts 
+    ADD CONSTRAINT content_drafts_video_task_id_fkey 
+    FOREIGN KEY (video_task_id) 
+    REFERENCES video_tasks(id) 
+    ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- ============================================
 -- 4. STORAGE BUCKET POLICIES (Reference)
