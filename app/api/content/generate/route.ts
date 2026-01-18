@@ -1,10 +1,58 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 import OpenAI from 'openai'
+import { validateReelScenario, calculateQualityScore } from '@/lib/reel-validator'
+
+const STATIC_CONTENT_TYPES = ['meme', 'post', 'deep_post', 'engagement_post', 'newsletter', 'thread']
+const VIDEO_CONTENT_TYPES = ['reel', 'short_form']
+const IMAGE_ENGINES = ['dalle', 'google_ai', 'replicate'] as const
+const VIDEO_ENGINES = ['runway', 'pika'] as const
+const DEFAULT_IMAGE_ENGINE = 'dalle'
+const DEFAULT_VIDEO_ENGINE = 'runway'
+
+type ImageEngine = typeof IMAGE_ENGINES[number]
+type VideoEngine = typeof VIDEO_ENGINES[number]
 
 export async function POST(request: Request) {
+  const startTime = Date.now()
+  
   try {
-    const { painPointId, contentType, options } = await request.json()
+    const { painPointId, contentType, options, imageEngine, videoEngine } = await request.json()
+    
+    console.log(`[Content Generation] Starting request - contentType: ${contentType}, imageEngine: ${imageEngine || 'auto'}, videoEngine: ${videoEngine || 'auto'}`)
+    
+    // Comprehensive input validation
+    if (!painPointId || typeof painPointId !== 'string') {
+      return NextResponse.json({ error: 'Invalid painPointId' }, { status: 400 })
+    }
+    
+    if (!contentType || typeof contentType !== 'string') {
+      return NextResponse.json({ error: 'Invalid contentType' }, { status: 400 })
+    }
+    
+    const isStaticContent = STATIC_CONTENT_TYPES.includes(contentType)
+    const isVideoContent = VIDEO_CONTENT_TYPES.includes(contentType)
+    
+    if (!isStaticContent && !isVideoContent) {
+      return NextResponse.json({ 
+        error: `Invalid contentType. Must be one of: ${[...STATIC_CONTENT_TYPES, ...VIDEO_CONTENT_TYPES].join(', ')}` 
+      }, { status: 400 })
+    }
+    
+    // Validate engines if provided
+    if (imageEngine && !IMAGE_ENGINES.includes(imageEngine)) {
+      return NextResponse.json({ 
+        error: `Invalid imageEngine. Must be one of: ${IMAGE_ENGINES.join(', ')}` 
+      }, { status: 400 })
+    }
+    
+    if (videoEngine && !VIDEO_ENGINES.includes(videoEngine)) {
+      return NextResponse.json({ 
+        error: `Invalid videoEngine. Must be one of: ${VIDEO_ENGINES.join(', ')}` 
+      }, { status: 400 })
+    }
+    
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
@@ -23,42 +71,269 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Pain point not found' }, { status: 404 })
     }
     
+    const agentId = painPoint.agents.id
+    const spaceId = painPoint.agents.space_id
+    
     // Get brand settings (optional)
     const { data: brandSettings } = await supabase
       .from('brand_settings')
       .select('*')
-      .eq('space_id', painPoint.agents.space_id)
+      .eq('space_id', spaceId)
       .single()
     
-    // Generate content with OpenAI
-    const content = await generateContent({
-      painPoint,
-      contentType,
-      options,
-      brandSettings
-    })
+    console.log(`[Content Generation] Routing decision - type: ${isVideoContent ? 'video' : 'static'}`)
     
-    // Save draft to database
-    const { data: draft, error } = await supabase
-      .from('content_drafts')
-      .insert({
-        agent_id: painPoint.agent_id,
-        pain_point_id: painPointId,
-        content_type: contentType,
-        ...content,
-        tone: options?.tone || 'empathetic',
-        goal: options?.goal || 'engagement',
-        target_platform: options?.platform || getDefaultPlatform(contentType)
+    // Route to appropriate generation logic
+    if (isVideoContent) {
+      const result = await handleVideoGeneration({
+        supabase,
+        painPoint,
+        contentType,
+        options,
+        brandSettings,
+        agentId,
+        painPointId,
+        videoEngine: videoEngine || DEFAULT_VIDEO_ENGINE,
+        user
       })
-      .select()
-      .single()
-    
-    if (error) throw error
-    
-    return NextResponse.json({ success: true, draft })
+      
+      const duration = Date.now() - startTime
+      console.log(`[Content Generation] Video generation completed in ${duration}ms`)
+      
+      return NextResponse.json(result)
+    } else {
+      const result = await handleStaticGeneration({
+        supabase,
+        painPoint,
+        contentType,
+        options,
+        brandSettings,
+        agentId,
+        painPointId,
+        imageEngine: imageEngine || DEFAULT_IMAGE_ENGINE,
+        user
+      })
+      
+      const duration = Date.now() - startTime
+      console.log(`[Content Generation] Static generation completed in ${duration}ms`)
+      
+      return NextResponse.json(result)
+    }
   } catch (error: any) {
-    console.error('Content generation error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const duration = Date.now() - startTime
+    console.error(`[Content Generation] Error after ${duration}ms:`, error)
+    return NextResponse.json({ 
+      error: error.message || 'Failed to generate content' 
+    }, { status: 500 })
+  }
+}
+
+/**
+ * Handle static content generation (meme, post, deep_post, engagement_post, newsletter, thread)
+ */
+async function handleStaticGeneration({ 
+  supabase, 
+  painPoint, 
+  contentType, 
+  options, 
+  brandSettings,
+  agentId,
+  painPointId,
+  imageEngine,
+  user
+}: any) {
+  const isMeme = contentType === 'meme'
+  
+  console.log(`[Static Generation] Generating ${contentType}${isMeme ? ` with ${imageEngine} engine` : ''}`)
+  
+  // Generate content with OpenAI
+  const content = isMeme 
+    ? await generateMemeConcept({ painPoint, options, brandSettings })
+    : await generateContent({ painPoint, contentType, options, brandSettings })
+  
+  // For memes, save the structured format
+  const draftData = isMeme ? {
+    agent_id: agentId,
+    pain_point_id: painPointId,
+    content_type: contentType,
+    hook: content.hook,
+    body: `Top: ${content.top_text}\n\nBottom: ${content.bottom_text}`,
+    cta: content.cta,
+    hashtags: content.hashtags || [],
+    tone: options?.tone || 'humorous',
+    goal: options?.goal || 'viral',
+    target_platform: 'instagram',
+    visual_suggestions: {
+      meme_format: content.meme_format,
+      image_description: content.image_description
+    },
+    status: 'draft'
+  } : {
+    agent_id: agentId,
+    pain_point_id: painPointId,
+    content_type: contentType,
+    ...content,
+    tone: options?.tone || 'empathetic',
+    goal: options?.goal || 'engagement',
+    target_platform: options?.platform || getDefaultPlatform(contentType)
+  }
+  
+  // Save draft to database
+  const { data: draft, error: draftError } = await supabase
+    .from('content_drafts')
+    .insert(draftData)
+    .select()
+    .single()
+  
+  if (draftError) throw draftError
+  
+  const response: any = {
+    success: true,
+    draft,
+    generation: {
+      type: 'static',
+      status: 'completed'
+    }
+  }
+  
+  // Generate image for meme
+  if (isMeme) {
+    console.log(`[Static Generation] Generating meme image with ${imageEngine}`)
+    
+    try {
+      const imageData = await generateMemeImage({
+        concept: content,
+        options,
+        engine: imageEngine
+      })
+      
+      // Upload to storage
+      const timestamp = Date.now()
+      const randomId = Math.random().toString(36).substring(7)
+      const storagePath = `${user.id}/memes/${timestamp}-${randomId}.png`
+      
+      const supabaseAdmin = createSupabaseAdmin(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      
+      const { error: storageError } = await supabaseAdmin.storage
+        .from('meme-images')
+        .upload(storagePath, imageData.imageBuffer, {
+          contentType: 'image/png',
+          cacheControl: '3600',
+          upsert: false
+        })
+      
+      if (storageError) throw storageError
+      
+      const { data: { publicUrl } } = supabaseAdmin.storage
+        .from('meme-images')
+        .getPublicUrl(storagePath)
+      
+      // Save meme metadata
+      const { data: memeImage } = await supabase
+        .from('meme_images')
+        .insert({
+          content_draft_id: draft.id,
+          agent_id: agentId,
+          original_prompt: content.image_description,
+          meme_format: content.meme_format,
+          top_text: content.top_text,
+          bottom_text: content.bottom_text,
+          image_url: publicUrl,
+          storage_path: storagePath,
+          version: 1,
+          parent_version_id: null,
+          refinement_prompt: null,
+          raw_image_data: {
+            generated_at: new Date().toISOString(),
+            model: imageData.model,
+            engine: imageData.engine,
+            concept: content
+          }
+        })
+        .select()
+        .single()
+      
+      // Link to draft
+      await supabase
+        .from('content_drafts')
+        .update({ meme_image_id: memeImage.id })
+        .eq('id', draft.id)
+      
+      response.generation.engine = imageData.engine
+      response.generation.image_url = publicUrl
+      response.draft.meme_image_id = memeImage.id
+      
+      console.log(`[Static Generation] Meme image generated and saved successfully`)
+    } catch (imageError: any) {
+      console.error(`[Static Generation] Image generation failed:`, imageError)
+      // Don't fail the entire request if image generation fails
+      response.generation.error = imageError.message
+    }
+  }
+  
+  return response
+}
+
+/**
+ * Handle video content generation (reel, short_form)
+ */
+async function handleVideoGeneration({
+  supabase,
+  painPoint,
+  contentType,
+  options,
+  brandSettings,
+  agentId,
+  painPointId,
+  videoEngine,
+  user
+}: any) {
+  console.log(`[Video Generation] Generating ${contentType} scenario with ${videoEngine} engine`)
+  
+  // Generate draft scenario with OpenAI
+  const draftScenario = await generateDraftScenario({
+    painPoint,
+    options,
+    brandSettings
+  })
+  
+  // Validate the generated scenario
+  const validation = validateReelScenario(draftScenario)
+  const qualityScore = calculateQualityScore(draftScenario, validation)
+  
+  // Save draft to database
+  const { data: draft, error } = await supabase
+    .from('draft_reel_scenarios')
+    .insert({
+      agent_id: agentId,
+      pain_point_id: painPointId,
+      draft_scenario: draftScenario,
+      original_scenario: draftScenario,
+      tone: options?.tone || 'empathetic',
+      goal: options?.goal || 'engagement',
+      status: 'draft',
+      validation_results: validation,
+      estimated_quality_score: qualityScore
+    })
+    .select()
+    .single()
+  
+  if (error) throw error
+  
+  console.log(`[Video Generation] Scenario saved, video generation not yet implemented`)
+  
+  return {
+    success: true,
+    draft,
+    generation: {
+      type: 'video',
+      engine: videoEngine,
+      status: 'processing',
+      task_id: draft.id // Use draft ID as placeholder task ID
+    }
   }
 }
 
@@ -100,6 +375,266 @@ async function generateContent({ painPoint, contentType, options, brandSettings 
     }
     throw error
   }
+}
+
+/**
+ * Generate meme concept using OpenAI
+ */
+async function generateMemeConcept({ painPoint, options, brandSettings }: any) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  
+  const systemPrompt = `You are an expert meme creator specializing in relatable, engaging memes about ADHD and neurodiversity.
+
+Brand Voice: ${brandSettings?.brand_voice || 'humorous, empathetic, relatable'}
+Target Audience: ${brandSettings?.target_audience || 'People with ADHD, 25-40 years old'}
+
+Create a meme concept that is funny, relatable, and scroll-stopping.
+
+Return JSON with this exact structure:
+{
+  "meme_format": "Name of meme format or 'Custom'",
+  "top_text": "Setup text (keep short, 5-10 words max)",
+  "bottom_text": "Punchline text (keep short, 5-10 words max)",
+  "hook": "Instagram caption hook",
+  "cta": "Call to action for comments",
+  "hashtags": ["adhd", "relatable", "meme"],
+  "image_description": "Detailed visual description for AI image generation (be specific about composition, colors, style, text placement)"
+}`
+
+  const userPrompt = `Create a ${options?.tone || 'humorous'} meme for ${options?.goal || 'viral'} engagement.
+
+Pain Point: "${painPoint.pain_point}"
+Category: ${painPoint.category}
+Sentiment: ${painPoint.sentiment}
+
+Make it relatable, funny, and shareable. The image should be eye-catching and work well on Instagram.`
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.8
+    })
+    
+    const content = completion.choices[0]?.message?.content
+    if (!content) {
+      throw new Error('No content generated from OpenAI')
+    }
+    
+    const parsed = JSON.parse(content)
+    
+    // Validate required fields
+    if (!parsed.top_text || !parsed.bottom_text || !parsed.image_description) {
+      throw new Error('Generated meme concept missing required fields')
+    }
+    
+    return parsed
+  } catch (error: any) {
+    console.error('OpenAI meme concept generation error:', error)
+    if (error.code === 'rate_limit_exceeded') {
+      throw new Error('Rate limit exceeded. Please try again later.')
+    }
+    throw error
+  }
+}
+
+/**
+ * Generate meme image with fallback to DALL-E
+ */
+async function generateMemeImage({ concept, options, engine }: any): Promise<{ 
+  imageBuffer: Buffer
+  model: string
+  engine: string 
+}> {
+  console.log(`[Image Generation] Attempting with engine: ${engine}`)
+  
+  // Currently only DALL-E is implemented
+  if (engine === 'dalle' || engine === DEFAULT_IMAGE_ENGINE) {
+    return await generateWithDallE(concept, options)
+  }
+  
+  // For other engines, attempt and fallback to DALL-E
+  console.log(`[Image Generation] Engine ${engine} not yet implemented, falling back to DALL-E`)
+  
+  try {
+    // Placeholder for future engine implementations
+    if (engine === 'google_ai') {
+      throw new Error('Google AI not yet implemented')
+    }
+    if (engine === 'replicate') {
+      throw new Error('Replicate not yet implemented')
+    }
+    
+    throw new Error(`Unknown engine: ${engine}`)
+  } catch (error: any) {
+    console.log(`[Image Generation] Fallback to DALL-E due to: ${error.message}`)
+    return await generateWithDallE(concept, options)
+  }
+}
+
+/**
+ * Generate image using DALL-E 3
+ */
+async function generateWithDallE(concept: any, options: any): Promise<{ 
+  imageBuffer: Buffer
+  model: string
+  engine: string 
+}> {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured')
+  }
+  
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  
+  const imagePrompt = `Create a ${concept.meme_format !== 'Custom' ? concept.meme_format + ' style' : ''} meme image.
+
+Visual Description: ${concept.image_description}
+
+Text to include:
+- Top: "${concept.top_text}"
+- Bottom: "${concept.bottom_text}"
+
+Style: Modern meme aesthetic, bold sans-serif font (Impact or similar), white text with black stroke, high contrast, social media optimized. Square format (1024x1024).`
+
+  console.log('[DALL-E 3] Generating image with prompt')
+  
+  try {
+    const imageResponse = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: imagePrompt,
+      n: 1,
+      size: '1024x1024',
+      quality: 'standard',
+      response_format: 'b64_json'
+    })
+    
+    if (!imageResponse.data?.[0]?.b64_json) {
+      throw new Error('No image data returned from DALL-E 3')
+    }
+    
+    console.log('[DALL-E 3] Image generated successfully')
+    
+    return {
+      imageBuffer: Buffer.from(imageResponse.data[0].b64_json, 'base64'),
+      model: 'dall-e-3',
+      engine: 'dalle'
+    }
+  } catch (error: any) {
+    console.error('[DALL-E 3] Generation error:', error)
+    
+    if (error.code === 'rate_limit_exceeded') {
+      throw new Error('DALL-E 3 rate limit exceeded. Please try again later.')
+    }
+    if (error.code === 'insufficient_quota') {
+      throw new Error('OpenAI quota exceeded. Please check your account.')
+    }
+    if (error.status === 400) {
+      throw new Error(`DALL-E 3 rejected the prompt: ${error.message}`)
+    }
+    
+    throw new Error(`Failed to generate image with DALL-E 3: ${error.message}`)
+  }
+}
+
+/**
+ * Generate draft reel scenario
+ */
+async function generateDraftScenario({ painPoint, options, brandSettings }: any) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  
+  const systemPrompt = buildReelSystemPrompt(brandSettings)
+  const userPrompt = buildReelUserPrompt(painPoint, options)
+  
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      response_format: { type: 'json_object' }
+    })
+    
+    const content = completion.choices[0]?.message?.content
+    if (!content) {
+      throw new Error('No content generated from OpenAI')
+    }
+    
+    const parsed = JSON.parse(content)
+    
+    if (!parsed.hook || !parsed.body || !parsed.cta) {
+      throw new Error('Generated content missing required fields (hook, body, cta)')
+    }
+    
+    return parsed
+  } catch (error: any) {
+    console.error('OpenAI reel scenario generation error:', error)
+    if (error.code === 'rate_limit_exceeded') {
+      throw new Error('Rate limit exceeded. Please try again later.')
+    } else if (error instanceof SyntaxError) {
+      throw new Error('Invalid response format from AI')
+    }
+    throw error
+  }
+}
+
+function buildReelSystemPrompt(brandSettings: any): string {
+  return `You are an expert Instagram Reel/TikTok content creator specializing in creating engaging video content about ADHD and neurodiversity.
+
+Brand Voice: ${brandSettings?.brand_voice || 'empathetic, humorous, relatable'}
+Target Audience: ${brandSettings?.target_audience || 'People with ADHD, 25-40 years old'}
+Guidelines: ${brandSettings?.content_guidelines || 'Focus on lived experience, be authentic'}
+
+Create a detailed reel scenario that can be edited before final production.
+
+CRITICAL: Return ONLY valid JSON with this exact structure:
+{
+  "hook": "Attention-grabbing first 3 seconds (30-150 chars, 6-30 words)",
+  "body": "Main content with clear structure and storytelling",
+  "cta": "Call to action that drives engagement (question works best)",
+  "key_moments": [
+    {
+      "timing": "0-3s",
+      "description": "Hook - grab attention",
+      "text": "Opening text or voiceover"
+    },
+    {
+      "timing": "3-15s",
+      "description": "Main point - core message",
+      "text": "Main content text or voiceover"
+    },
+    {
+      "timing": "15-30s",
+      "description": "CTA - call to action",
+      "text": "Closing text or voiceover"
+    }
+  ],
+  "visual_suggestions": {
+    "format": "talking head / b-roll / text overlay / mixed",
+    "music_vibe": "upbeat / emotional / trending / calm"
+  },
+  "hashtags": ["adhd", "neurodiversity", "relatable", "mental_health", "adhd_life"]
+}
+
+Make it scroll-stopping, relatable, and authentic. The hook MUST grab attention in 3 seconds.`
+}
+
+function buildReelUserPrompt(painPoint: any, options: any): string {
+  return `Create a ${options?.tone || 'empathetic'} reel with a ${options?.goal || 'engagement'} goal.
+
+Pain Point: "${painPoint.pain_point}"
+Category: ${painPoint.category}
+Sentiment: ${painPoint.sentiment}
+Frequency: ${painPoint.frequency}
+Example Quote: "${painPoint.raw_content || 'N/A'}"
+
+${options?.additionalNotes ? `Additional Instructions: ${options.additionalNotes}` : ''}
+
+Generate a compelling reel scenario that resonates with the target audience and addresses this pain point authentically.`
 }
 
 function buildSystemPrompt(contentType: string, brandSettings: any): string {
