@@ -12,13 +12,11 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Copy, Check, Sparkles, AlertCircle, Save, Clock, Edit, ChevronRight, History } from 'lucide-react'
+import { Loader2, Copy, Check, Sparkles, AlertCircle, Save, Clock, Edit, ChevronRight, History, Edit3 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
-import { Loader2, Copy, Check, Sparkles, AlertCircle, Edit3 } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ScenarioEditor } from './ScenarioEditor'
 import { type ReelScenario } from '@/lib/reel-validator'
 
@@ -558,8 +556,6 @@ export function ContentCreationModal({
             </Alert>
           )}
           
-          {/* Generation Phase (Step 0 or 1 depending on flow) */}
-          {!generatedContent && currentStepName === 'generate' && (
           {/* Two-stage reel editing flow */}
           {contentType === 'reel' && reelStage === 'editing' && draftScenario && (
             <>
@@ -689,30 +685,15 @@ export function ContentCreationModal({
           {generatedContent && reelStage !== 'editing' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="bg-green-50 border border-green-200 px-3 py-2 rounded flex-1">
+                <div className="bg-green-50 border border-green-200 p-3 rounded flex-1">
                   <p className="text-sm font-medium text-green-900">
-                    ✅ Content Generated Successfully!
+                    ✅ {contentType === 'reel' && reelStage === 'finalized' ? 'Reel Finalized Successfully!' : 'Content Generated Successfully!'}
                   </p>
-              <div className="bg-green-50 border border-green-200 p-3 rounded">
-                <p className="text-sm font-medium text-green-900">
-                  ✅ {contentType === 'reel' && reelStage === 'finalized' ? 'Reel Finalized Successfully!' : 'Content Generated Successfully!'}
-                </p>
-                {contentType === 'reel' && reelStage === 'finalized' && (
-                  <p className="text-sm text-green-700 mt-1">
-                    Your edited scenario has been optimized and is ready to use!
-                  </p>
-                )}
-              </div>
-              
-              {/* Hook */}
-              {generatedContent.hook && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                    🎬 Hook
-                  </Label>
-                  <div className="p-3 bg-gray-50 rounded border">
-                    <p className="text-sm text-gray-900">{generatedContent.hook}</p>
-                  </div>
+                  {contentType === 'reel' && reelStage === 'finalized' && (
+                    <p className="text-sm text-green-700 mt-1">
+                      Your edited scenario has been optimized and is ready to use!
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2 ml-2">
                   <Button
@@ -731,6 +712,18 @@ export function ContentCreationModal({
                   )}
                 </div>
               </div>
+              
+              {/* Hook */}
+              {generatedContent.hook && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                    🎬 Hook
+                  </Label>
+                  <div className="p-3 bg-gray-50 rounded border">
+                    <p className="text-sm text-gray-900">{generatedContent.hook}</p>
+                  </div>
+                </div>
+              )}
               
               {editMode ? (
                 <>
