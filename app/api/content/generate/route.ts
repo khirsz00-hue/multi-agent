@@ -30,12 +30,40 @@ export async function POST(request: Request) {
       .eq('space_id', painPoint.agents.space_id)
       .single()
     
+    const engine = options?.engine
+    const isVideoEngine = ['remotion', 'creatomate', 'd-id', 'heygen'].includes(engine)
+    
+    // For video engines, create async job
+    if (isVideoEngine && contentType === 'reel') {
+      // Create video generation job
+      const { data: job, error: jobError } = await supabase
+        .from('video_jobs')
+        .insert({
+          user_id: user.id,
+          pain_point_id: painPointId,
+          content_type: contentType,
+          engine: engine,
+          status: 'pending',
+          options: options,
+          estimated_completion: new Date(Date.now() + 120000).toISOString() // 2 minutes estimate
+        })
+        .select()
+        .single()
+      
+      if (jobError) throw jobError
+      
+      // Return job ID for polling
+      return NextResponse.json({ success: true, jobId: job.id, async: true })
+    }
+    
+    // For sync generation (images, text-only content)
     // Generate content with OpenAI
     const content = await generateContent({
       painPoint,
       contentType,
       options,
-      brandSettings
+      brandSettings,
+      engine
     })
     
     // Save draft to database
@@ -48,12 +76,29 @@ export async function POST(request: Request) {
         ...content,
         tone: options?.tone || 'empathetic',
         goal: options?.goal || 'engagement',
-        target_platform: options?.platform || getDefaultPlatform(contentType)
+        target_platform: options?.platform || getDefaultPlatform(contentType),
+        generation_engine: engine
       })
       .select()
       .single()
     
     if (error) throw error
+    
+    // If image engine, generate image now
+    if (engine === 'dall-e-3' && content.visual_suggestions?.image_description) {
+      try {
+        const imageUrl = await generateImage(content.visual_suggestions.image_description, user.id, supabase)
+        // Update draft with image URL
+        await supabase
+          .from('content_drafts')
+          .update({ image_url: imageUrl })
+          .eq('id', draft.id)
+        draft.image_url = imageUrl
+      } catch (imageError) {
+        console.error('Image generation failed:', imageError)
+        // Continue without image - non-blocking
+      }
+    }
     
     return NextResponse.json({ success: true, draft })
   } catch (error: any) {
@@ -62,7 +107,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function generateContent({ painPoint, contentType, options, brandSettings }: any) {
+async function generateContent({ painPoint, contentType, options, brandSettings, engine }: any) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   
   const systemPrompt = buildSystemPrompt(contentType, brandSettings)
@@ -214,4 +259,46 @@ function getDefaultPlatform(contentType: string): string {
     thread: 'twitter'
   }
   return platformMap[contentType] || 'instagram'
+}
+
+async function generateImage(description: string, userId: string, supabase: any): Promise<string> {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  
+  try {
+    // Generate image with DALL-E 3
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: description,
+      n: 1,
+      size: '1024x1024',
+      response_format: 'b64_json'
+    })
+    
+    const b64Image = response.data?.[0]?.b64_json
+    if (!b64Image) throw new Error('No image generated')
+    
+    // Convert base64 to buffer
+    const imageBuffer = Buffer.from(b64Image, 'base64')
+    
+    // Upload to Supabase Storage
+    const fileName = `${userId}/generated/${Date.now()}-${Math.random().toString(36).substring(7)}.png`
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('content-images')
+      .upload(fileName, imageBuffer, {
+        contentType: 'image/png',
+        cacheControl: '3600'
+      })
+    
+    if (uploadError) throw uploadError
+    
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('content-images')
+      .getPublicUrl(fileName)
+    
+    return publicUrl
+  } catch (error) {
+    console.error('Image generation error:', error)
+    throw error
+  }
 }
