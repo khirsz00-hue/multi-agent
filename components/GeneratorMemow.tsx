@@ -9,7 +9,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { Loader2, Image as ImageIcon } from 'lucide-react'
+import { Loader2, ImageIcon } from 'lucide-react'
 
 interface GeneratorMemowProps {
   topText: string
@@ -29,6 +29,12 @@ export function GeneratorMemow({
   const [blad, setBlad] = useState<string | null>(null)
   
   async function generujMema() {
+    // Walidacja
+    if (!topText && !bottomText) {
+      setBlad('Minimum jeden tekst musi być ustawiony!')
+      return
+    }
+    
     setGenerowanie(true)
     setBlad(null)
     
@@ -46,7 +52,7 @@ export function GeneratorMemow({
       const data = await response.json()
       
       if (!data.sukces) {
-        setBlad(data.blad || 'Błąd podczas generowania')
+        setBlad(data.blad || 'Błąd podczas generowania mema')
         return
       }
       
@@ -54,7 +60,7 @@ export function GeneratorMemow({
       onSuccess?.(data.obraz_url)
       
     } catch (error: any) {
-      setBlad(error.message)
+      setBlad(error.message || 'Nieznany błąd')
     } finally {
       setGenerowanie(false)
     }
@@ -64,39 +70,41 @@ export function GeneratorMemow({
     <div className="space-y-4">
       <Button 
         onClick={generujMema}
-        disabled={generowanie}
-        className="w-full"
+        disabled={generowanie || (!topText && !bottomText)}
+        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
       >
         {generowanie ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generuję mema...
+            Generuję mema... (może chwilę potrwać)
           </>
         ) : (
           <>
             <ImageIcon className="mr-2 h-4 w-4" />
-            Wygeneruj Mema
+            🎨 Wygeneruj Mem za pomocą DALL-E
           </>
         )}
       </Button>
       
       {blad && (
-        <div className="p-3 bg-red-100 text-red-700 rounded">
-          ❌ {blad}
+        <div className="p-3 bg-red-100 text-red-700 rounded border border-red-300">
+          <p className="font-semibold">❌ Błąd</p>
+          <p className="text-sm">{blad}</p>
         </div>
       )}
       
       {obraz && (
         <div className="space-y-2">
-          <p className="text-sm text-green-600">✅ Mem wygenerowany!</p>
+          <p className="text-sm text-green-600 font-semibold">✅ Mem wygenerowany pomyślnie!</p>
           <div className="relative w-full aspect-square">
             <Image 
               src={obraz} 
               alt="Wygenerowany mem" 
               fill
-              className="rounded-lg border-2 border-green-500 object-contain"
+              className="rounded-lg border-2 border-green-500 shadow-lg object-contain"
             />
           </div>
+          <p className="text-xs text-gray-500">Mem został zapisany do bazy danych. Możesz go teraz opublikować!</p>
         </div>
       )}
     </div>
