@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { useToast } from '@/components/ui/toast'
 import {
   Select,
   SelectContent,
@@ -69,6 +70,7 @@ export default function ContentCalendar({
   onUpdateDraft,
   onSchedule
 }: ContentCalendarProps) {
+  const { showToast } = useToast()
   const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [selectedDrafts, setSelectedDrafts] = useState<Set<string>>(new Set())
@@ -203,7 +205,7 @@ export default function ContentCalendar({
     if (draft.hashtags?.length) text += draft.hashtags.join(' ')
     
     navigator.clipboard.writeText(text)
-    alert('Content copied to clipboard!')
+    showToast('Content copied to clipboard!', 'success')
   }
 
   const handleEditDraft = (draft: any) => {
@@ -227,12 +229,13 @@ export default function ContentCalendar({
     setIsEditModalOpen(false)
     setEditingDraft(null)
     onRefresh()
+    showToast('Content updated successfully!', 'success')
   }
 
   const handleRegenerate = async (draft: any) => {
     if (!confirm('Regenerate this content?')) return
     // This would call the regeneration API
-    alert('Regeneration feature coming soon!')
+    showToast('Regeneration feature coming soon', 'info')
   }
 
   const navigateMonth = (direction: 'prev' | 'next') => {

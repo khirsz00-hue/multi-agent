@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Clock } from 'lucide-react'
 import ContentCalendar from '@/components/ContentCalendar'
+import { ToastProvider, useToast } from '@/components/ui/toast'
 
-export default function ContentCalendarPage() {
+function ContentCalendarPageContent() {
+  const { showToast } = useToast()
   const [calendar, setCalendar] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   
@@ -37,8 +39,9 @@ export default function ContentCalendarPage() {
       
       // Reload calendar
       await loadCalendar()
+      showToast('Status updated successfully', 'success')
     } catch (error: any) {
-      alert(error.message)
+      showToast(error.message, 'error')
     }
   }
   
@@ -53,8 +56,9 @@ export default function ContentCalendarPage() {
       if (!res.ok) throw new Error('Failed to delete draft')
       
       await loadCalendar()
+      showToast('Draft deleted successfully', 'success')
     } catch (error: any) {
-      alert(error.message)
+      showToast(error.message, 'error')
     }
   }
 
@@ -66,8 +70,9 @@ export default function ContentCalendarPage() {
         )
       )
       await loadCalendar()
+      showToast(`${draftIds.length} items deleted successfully`, 'success')
     } catch (error: any) {
-      alert(error.message)
+      showToast(error.message, 'error')
     }
   }
 
@@ -83,8 +88,9 @@ export default function ContentCalendarPage() {
         )
       )
       await loadCalendar()
+      showToast(`${draftIds.length} items published successfully`, 'success')
     } catch (error: any) {
-      alert(error.message)
+      showToast(error.message, 'error')
     }
   }
 
@@ -100,7 +106,7 @@ export default function ContentCalendarPage() {
       
       await loadCalendar()
     } catch (error: any) {
-      alert(error.message)
+      showToast(error.message, 'error')
     }
   }
 
@@ -118,8 +124,9 @@ export default function ContentCalendarPage() {
       if (!res.ok) throw new Error('Failed to schedule draft')
       
       await loadCalendar()
+      showToast('Content scheduled successfully', 'success')
     } catch (error: any) {
-      alert(error.message)
+      showToast(error.message, 'error')
     }
   }
   
@@ -149,5 +156,13 @@ export default function ContentCalendarPage() {
         onSchedule={scheduleDraft}
       />
     </div>
+  )
+}
+
+export default function ContentCalendarPage() {
+  return (
+    <ToastProvider>
+      <ContentCalendarPageContent />
+    </ToastProvider>
   )
 }
