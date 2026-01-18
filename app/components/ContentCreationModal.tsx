@@ -21,6 +21,7 @@ import { ScenarioEditor } from './ScenarioEditor'
 import { type ReelScenario } from '@/lib/reel-validator'
 import { EngineSelector, type Engine, type ImageEngine, type VideoEngine } from './EngineSelector'
 import { VideoGenerationModal } from './VideoGenerationModal'
+import { GeneratorMemow } from '@/components/GeneratorMemow'
 
 interface ContentCreationModalProps {
   painPoint: {
@@ -89,6 +90,9 @@ export function ContentCreationModal({
   const [videoJobId, setVideoJobId] = useState<string | null>(null)
   const [showVideoModal, setShowVideoModal] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  
+  // Meme image generation state
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
   
   const contentTypeLabels: Record<string, string> = {
     reel: 'Instagram Reel/TikTok',
@@ -941,6 +945,46 @@ export function ContentCreationModal({
                     </div>
                   )}
                 </>
+              )}
+              
+              {/* Meme Generator Section - Only for meme content type */}
+              {contentType === 'meme' && generatedContent && (
+                <div className="space-y-4 border-t pt-4">
+                  <div>
+                    <h3 className="font-semibold mb-2">📸 Tekst Mema:</h3>
+                    <div className="bg-gray-100 p-3 rounded space-y-2">
+                      <p className="text-sm">
+                        <strong>U góry:</strong> {generatedContent.meme_top_text || '(nie ustawione)'}
+                      </p>
+                      <p className="text-sm">
+                        <strong>U dołu:</strong> {generatedContent.meme_bottom_text || '(nie ustawione)'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <GeneratorMemow
+                    topText={generatedContent.meme_top_text || ''}
+                    bottomText={generatedContent.meme_bottom_text || ''}
+                    draftId={draftId || undefined}
+                    onSuccess={(url) => {
+                      setImageUrl(url)
+                      // Optionally: show success message
+                    }}
+                  />
+                  
+                  {imageUrl && (
+                    <div>
+                      <h3 className="font-semibold mb-2">✅ Wygenerowany Mem:</h3>
+                      <div className="relative w-full aspect-square">
+                        <img 
+                          src={imageUrl} 
+                          alt="Wygenerowany mem" 
+                          className="w-full h-full rounded-lg border-2 border-green-500 object-contain"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
               
               {/* Action Buttons */}

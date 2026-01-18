@@ -9,6 +9,7 @@ import { Loader2, Save, CheckCircle, AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import EngagementPostEditor from './EngagementPostEditor'
 import TwitterThreadEditor from './TwitterThreadEditor'
+import { GeneratorMemow } from '@/components/GeneratorMemow'
 
 interface QuickContentEditorProps {
   draftId: string
@@ -27,6 +28,10 @@ export default function QuickContentEditor({
   const [validation, setValidation] = useState<any>(null)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [error, setError] = useState<string | null>(null)
+  
+  // Meme generator state
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [showImageGenerator, setShowImageGenerator] = useState(false)
 
   useEffect(() => {
     loadDraft()
@@ -221,6 +226,62 @@ export default function QuickContentEditor({
           content={draft.draft}
           onChange={handleDraftChange}
         />
+      )}
+      
+      {/* Meme Generator Section - Only for meme content type */}
+      {draft.content_type === 'meme' && (
+        <div className="border-t pt-6">
+          <h2 className="text-xl font-bold mb-4">📸 Generator Memeów</h2>
+          
+          <Button
+            onClick={() => setShowImageGenerator(!showImageGenerator)}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mb-4"
+          >
+            {showImageGenerator ? '⬆️ Ukryj generator' : '⬇️ Pokaż generator'}
+          </Button>
+          
+          {showImageGenerator && (
+            <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+              <div>
+                <h3 className="font-semibold mb-2">Tekst Mema:</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">U góry:</p>
+                    <p className="font-semibold">{draft.meme_top_text || '(nie ustawione)'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">U dołu:</p>
+                    <p className="font-semibold">{draft.meme_bottom_text || '(nie ustawione)'}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <GeneratorMemow
+                topText={draft.meme_top_text || ''}
+                bottomText={draft.meme_bottom_text || ''}
+                draftId={draft.id}
+                onSuccess={(url) => {
+                  setImageUrl(url)
+                  // Refresh draft to have the current image_url
+                  loadDraft()
+                }}
+              />
+              
+              {imageUrl && (
+                <div>
+                  <h3 className="font-semibold mb-2">✅ Wygenerowany Mem:</h3>
+                  <div className="relative w-full aspect-square">
+                    <img 
+                      src={imageUrl} 
+                      alt="Wygenerowany mem" 
+                      className="w-full h-full rounded-lg border-2 border-green-500 object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
