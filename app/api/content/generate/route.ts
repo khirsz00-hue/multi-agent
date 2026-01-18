@@ -121,7 +121,9 @@ interface GenerationResponse {
   engine?: string
   image_url?: string
   video_url?: string
-  task_id?: string
+  scenario_id?: string // For video: draft scenario ID
+  task_id?: string // For video: actual video generation task ID (future)
+  message?: string
   error?: string
 }
 
@@ -284,12 +286,15 @@ async function handleStaticGeneration({
       hashtags: memeConcept.hashtags || [],
       tone: options?.tone || 'humorous',
       goal: options?.goal || 'viral',
-      target_platform: 'instagram',
+      target_platform: getDefaultPlatform(contentType),
       visual_suggestions: {
         meme_format: memeConcept.meme_format,
         image_description: memeConcept.image_description
       },
-      status: 'draft'
+      status: 'draft',
+      // Store top_text and bottom_text separately for reliable extraction
+      _meme_top_text: memeConcept.top_text,
+      _meme_bottom_text: memeConcept.bottom_text
     }
   } else {
     const content = await generateContent({ painPoint, contentType, options, brandSettings })
@@ -326,9 +331,9 @@ async function handleStaticGeneration({
   if (isMeme) {
     console.log(`[Static Generation] Generating meme image with ${imageEngine}`)
     
-    // Extract meme concept from draft data
-    const topText = draftData.body.split('\n')[0].replace('Top: ', '')
-    const bottomText = draftData.body.split('\n')[2]?.replace('Bottom: ', '') || ''
+    // Extract meme concept from draft data (using stored separate fields if available)
+    const topText = draftData._meme_top_text || draftData.body.split('\n')[0]?.replace('Top: ', '') || ''
+    const bottomText = draftData._meme_bottom_text || draftData.body.split('\n')[2]?.replace('Bottom: ', '') || ''
     
     const memeConcept: MemeConcept = {
       meme_format: draftData.visual_suggestions.meme_format,
@@ -472,7 +477,8 @@ async function handleVideoGeneration({
       type: 'video',
       engine: videoEngine,
       status: 'processing',
-      task_id: `draft-${draft.id}` // Prefix to indicate this is a draft ID, not a video task ID
+      scenario_id: `draft-${draft.id}`, // Draft scenario ID, not a video processing task ID
+      message: 'Video scenario created. Actual video generation can be triggered separately.'
     }
   }
 }
@@ -913,7 +919,9 @@ Generate engaging, scroll-stopping content that resonates with the target audien
 function getDefaultPlatform(contentType: string): string {
   const platformMap: Record<string, string> = {
     reel: 'instagram',
+    short_form: 'tiktok',
     meme: 'instagram',
+    post: 'instagram',
     deep_post: 'instagram',
     engagement_post: 'facebook',
     newsletter: 'email',
