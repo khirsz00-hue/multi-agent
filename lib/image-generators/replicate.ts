@@ -24,6 +24,7 @@ export interface ReplicateGenerationOptions {
 export interface ImageGenerationResult {
   imageBuffer: Buffer
   model: string
+  revisedPrompt?: string
 }
 
 /**

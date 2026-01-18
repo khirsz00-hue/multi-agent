@@ -21,6 +21,7 @@ export interface GoogleAIGenerationOptions {
 export interface ImageGenerationResult {
   imageBuffer: Buffer
   model: string
+  revisedPrompt?: string
 }
 
 /**
