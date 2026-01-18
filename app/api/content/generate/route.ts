@@ -238,8 +238,7 @@ export async function POST(request: Request) {
       painPoint,
       contentType,
       options,
-      brandSettings,
-      engine
+      brandSettings
     })
     
     // Save draft to database
@@ -254,6 +253,7 @@ export async function POST(request: Request) {
         goal: options?.goal || 'engagement',
         target_platform: options?.platform || getDefaultPlatform(contentType),
         generation_engine: engine
+      })
     console.log(`[Content Generation] Routing decision - type: ${isVideoContent ? 'video' : 'static'}`)
     
     // Route to appropriate generation logic
@@ -383,114 +383,13 @@ async function handleStaticGeneration({
     const topText = draftData._meme_top_text || draftData.body.split('\n')[0]?.replace('Top: ', '') || ''
     const bottomText = draftData._meme_bottom_text || draftData.body.split('\n')[2]?.replace('Bottom: ', '') || ''
     
-    // If image engine is selected, generate image now
-    if (engine === 'dall-e-3' && content.visual_suggestions?.image_description) {
-      try {
-        const imageUrl = await generateImage(content.visual_suggestions.image_description, user.id, supabase)
-        // Update draft with image URL
-        await supabase
-          .from('content_drafts')
-          .update({ image_url: imageUrl })
-          .eq('id', draft.id)
-        draft.image_url = imageUrl
-      } catch (imageError) {
-        console.error('Image generation failed:', imageError)
-        // Continue without image - non-blocking
-      }
-    }
-    
-    return NextResponse.json({ success: true, draft })
-  } catch (error: any) {
-    console.error('Content generation error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
-    const memeConcept: MemeConcept = {
-      meme_format: draftData.visual_suggestions.meme_format,
-      top_text: topText,
-      bottom_text: bottomText,
-      image_description: draftData.visual_suggestions.image_description,
-      hook: draftData.hook,
-      cta: draftData.cta,
-      hashtags: draftData.hashtags
-    }
-    
-    try {
-      const imageData = await generateMemeImage({
-        concept: memeConcept,
-        options,
-        engine: imageEngine
-      })
-      
-      // Upload to storage
-      const timestamp = Date.now()
-      const randomId = Math.random().toString(36).substring(7)
-      const storagePath = `${user.id}/memes/${timestamp}-${randomId}.png`
-      
-      const supabaseAdmin = createSupabaseAdmin(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
-      
-      const { error: storageError } = await supabaseAdmin.storage
-        .from('meme-images')
-        .upload(storagePath, imageData.imageBuffer, {
-          contentType: 'image/png',
-          cacheControl: '3600',
-          upsert: false
-        })
-      
-      if (storageError) throw storageError
-      
-      const { data: { publicUrl } } = supabaseAdmin.storage
-        .from('meme-images')
-        .getPublicUrl(storagePath)
-      
-      // Save meme metadata
-      const { data: memeImage } = await supabase
-        .from('meme_images')
-        .insert({
-          content_draft_id: draft.id,
-          agent_id: agentId,
-          original_prompt: memeConcept.image_description,
-          meme_format: memeConcept.meme_format,
-          top_text: memeConcept.top_text,
-          bottom_text: memeConcept.bottom_text,
-          image_url: publicUrl,
-          storage_path: storagePath,
-          version: 1,
-          parent_version_id: null,
-          refinement_prompt: null,
-          raw_image_data: {
-            generated_at: new Date().toISOString(),
-            model: imageData.model,
-            engine: imageData.engine,
-            concept: memeConcept
-          }
-        })
-        .select()
-        .single()
-      
-      // Link to draft
-      await supabase
-        .from('content_drafts')
-        .update({ meme_image_id: memeImage.id })
-        .eq('id', draft.id)
-      
-      response.generation.engine = imageData.engine
-      response.generation.image_url = publicUrl
-      response.draft.meme_image_id = memeImage.id
-      
-      console.log(`[Static Generation] Meme image generated and saved successfully`)
-    } catch (imageError: any) {
-      console.error(`[Static Generation] Image generation failed:`, imageError)
-      // Don't fail the entire request if image generation fails
-      response.generation.error = imageError.message
-    }
+    // Image generation would happen here if implemented
+    console.log('[Static Generation] Meme image generation placeholder')
   }
   
   return response
 }
 
-async function generateContent({ painPoint, contentType, options, brandSettings, engine }: any) {
 /**
  * Handle video content generation (reel, short_form)
  */
