@@ -88,7 +88,7 @@ USING (
 ALTER TABLE content_drafts 
   ADD COLUMN IF NOT EXISTS image_engine VARCHAR(50),
   ADD COLUMN IF NOT EXISTS video_status VARCHAR(50),
-  ADD COLUMN IF NOT EXISTS video_task_id VARCHAR(255),
+  ADD COLUMN IF NOT EXISTS video_task_id UUID REFERENCES video_tasks(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS video_eta TIMESTAMP WITH TIME ZONE,
   ADD COLUMN IF NOT EXISTS generation_cost DECIMAL(10, 4) DEFAULT 0.00;
 
@@ -99,10 +99,6 @@ CREATE INDEX IF NOT EXISTS idx_content_drafts_image_engine ON content_drafts(ima
 CREATE INDEX IF NOT EXISTS idx_content_drafts_video_engine ON content_drafts(video_engine);
 CREATE INDEX IF NOT EXISTS idx_content_drafts_video_status ON content_drafts(video_status);
 CREATE INDEX IF NOT EXISTS idx_content_drafts_video_task_id ON content_drafts(video_task_id);
-
--- Add foreign key constraint for video_task_id (optional, for data integrity)
--- Note: This creates a soft link since video_task_id is VARCHAR, not UUID
--- We'll rely on application logic to maintain consistency
 
 -- ============================================
 -- 4. STORAGE BUCKET POLICIES (Reference)

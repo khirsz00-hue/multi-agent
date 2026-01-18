@@ -112,7 +112,7 @@ export interface ContentDraft {
   image_engine?: string; // 'dalle3', 'midjourney', 'stable-diffusion', etc.
   video_engine?: string; // 'runway', 'pika', 'luma', etc.
   video_status?: 'pending' | 'processing' | 'completed' | 'failed';
-  video_task_id?: string; // Link to external video generation task
+  video_task_id?: string; // UUID reference to video_tasks.id
   video_eta?: string; // Estimated completion time
   video_url?: string; // Final video storage URL
   generation_cost?: number; // Cost tracking in decimal
