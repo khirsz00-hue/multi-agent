@@ -28,6 +28,16 @@ interface ContentCreationModalProps {
   painPoint: any
 }
 
+// Engine validation helpers
+const VALID_IMAGE_ENGINES: ImageEngine[] = ['google-ai', 'dall-e', 'replicate']
+const VALID_VIDEO_ENGINES: VideoEngine[] = ['runway', 'pika']
+
+const isValidImageEngine = (engine: string): engine is ImageEngine => 
+  VALID_IMAGE_ENGINES.includes(engine as ImageEngine)
+
+const isValidVideoEngine = (engine: string): engine is VideoEngine => 
+  VALID_VIDEO_ENGINES.includes(engine as VideoEngine)
+
 export default function ContentCreationModal({ open, onClose, painPoint }: ContentCreationModalProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -54,13 +64,13 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
   
   // Load engine preferences from localStorage on mount
   useEffect(() => {
-    const savedImageEngine = localStorage.getItem('preferredImageEngine') as ImageEngine | null
-    const savedVideoEngine = localStorage.getItem('preferredVideoEngine') as VideoEngine | null
+    const savedImageEngine = localStorage.getItem('preferredImageEngine')
+    const savedVideoEngine = localStorage.getItem('preferredVideoEngine')
     
-    if (savedImageEngine && ['google-ai', 'dall-e', 'replicate'].includes(savedImageEngine)) {
+    if (savedImageEngine && isValidImageEngine(savedImageEngine)) {
       setImageEngine(savedImageEngine)
     }
-    if (savedVideoEngine && ['runway', 'pika'].includes(savedVideoEngine)) {
+    if (savedVideoEngine && isValidVideoEngine(savedVideoEngine)) {
       setVideoEngine(savedVideoEngine)
     }
   }, [])

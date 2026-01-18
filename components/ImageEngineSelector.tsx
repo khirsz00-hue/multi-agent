@@ -15,7 +15,10 @@ const imageEngineOptions: EngineOption[] = [
     id: 'google-ai',
     name: 'Google AI',
     description: 'Fastest generation with good quality. Perfect for quick memes and rapid content creation.',
-    badges: ['Fastest', '⚡ Quick'],
+    badges: [
+      { text: 'Fastest', variant: 'secondary' },
+      { text: '⚡ Quick', variant: 'secondary' }
+    ],
     estimatedTime: '5-10 seconds',
     icon: <Zap className="h-5 w-5 text-yellow-500" />
   },
@@ -23,7 +26,11 @@ const imageEngineOptions: EngineOption[] = [
     id: 'dall-e',
     name: 'DALL-E',
     description: 'Most creative and highest quality. Best for polished, professional-looking content.',
-    badges: ['Most Creative', 'Recommended', '✨ Best Quality'],
+    badges: [
+      { text: 'Most Creative', variant: 'default' },
+      { text: 'Recommended', variant: 'default' },
+      { text: '✨ Best Quality', variant: 'secondary' }
+    ],
     estimatedTime: '10-15 seconds',
     icon: <Sparkles className="h-5 w-5 text-purple-500" />
   },
@@ -31,7 +38,10 @@ const imageEngineOptions: EngineOption[] = [
     id: 'replicate',
     name: 'Replicate',
     description: 'Balanced quality and speed. Great all-around option for various content types.',
-    badges: ['Balanced', '⚖️ Versatile'],
+    badges: [
+      { text: 'Balanced', variant: 'secondary' },
+      { text: '⚖️ Versatile', variant: 'secondary' }
+    ],
     estimatedTime: '8-12 seconds',
     icon: <Scale className="h-5 w-5 text-blue-500" />
   }

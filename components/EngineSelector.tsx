@@ -8,11 +8,16 @@ import { Label } from '@/components/ui/label'
 export type ImageEngine = 'google-ai' | 'dall-e' | 'replicate'
 export type VideoEngine = 'runway' | 'pika'
 
+export interface EngineBadge {
+  text: string
+  variant?: 'default' | 'secondary'
+}
+
 export interface EngineOption {
   id: string
   name: string
   description: string
-  badges: string[]
+  badges: EngineBadge[]
   estimatedTime: string
   icon?: React.ReactNode
 }
@@ -41,7 +46,7 @@ export function EngineSelector({
             key={option.id}
             className={`cursor-pointer transition-all hover:shadow-md ${
               selectedEngine === option.id
-                ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
             onClick={() => onEngineChange(option.id)}
@@ -58,10 +63,10 @@ export function EngineSelector({
                     {option.badges.map((badge, idx) => (
                       <Badge
                         key={idx}
-                        variant={badge.includes('Recommended') || badge.includes('Default') ? 'default' : 'secondary'}
+                        variant={badge.variant || 'secondary'}
                         className="text-xs"
                       >
-                        {badge}
+                        {badge.text}
                       </Badge>
                     ))}
                   </div>
@@ -71,7 +76,7 @@ export function EngineSelector({
                 </div>
                 {selectedEngine === option.id && (
                   <div className="flex-shrink-0">
-                    <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
                       <svg
                         className="w-4 h-4 text-white"
                         fill="none"

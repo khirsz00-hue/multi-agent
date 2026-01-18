@@ -15,7 +15,10 @@ const videoEngineOptions: EngineOption[] = [
     id: 'runway',
     name: 'Runway',
     description: 'Creative video generation with dynamic effects. Best for artistic and dynamic shots.',
-    badges: ['Creative', '🎬 Dynamic'],
+    badges: [
+      { text: 'Creative', variant: 'secondary' },
+      { text: '🎬 Dynamic', variant: 'secondary' }
+    ],
     estimatedTime: '2-4 minutes',
     icon: <Clapperboard className="h-5 w-5 text-indigo-500" />
   },
@@ -23,7 +26,11 @@ const videoEngineOptions: EngineOption[] = [
     id: 'pika',
     name: 'Pika',
     description: 'Fast short-form video generation. Perfect for reactive shorts and quick content.',
-    badges: ['Default', 'Fastest', '⚡ Quick Shorts'],
+    badges: [
+      { text: 'Default', variant: 'default' },
+      { text: 'Fastest', variant: 'default' },
+      { text: '⚡ Quick Shorts', variant: 'secondary' }
+    ],
     estimatedTime: '30-90 seconds',
     icon: <Video className="h-5 w-5 text-green-500" />
   }
