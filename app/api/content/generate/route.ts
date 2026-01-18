@@ -14,6 +14,79 @@ const DEFAULT_VIDEO_ENGINE = 'runway'
 type ImageEngine = typeof IMAGE_ENGINES[number]
 type VideoEngine = typeof VIDEO_ENGINES[number]
 
+interface ContentOptions {
+  tone?: string
+  goal?: string
+  platform?: string
+  additionalNotes?: string
+}
+
+interface PainPoint {
+  id: string
+  pain_point: string
+  category: string
+  sentiment: string
+  frequency: string
+  raw_content?: string
+  agent_id: string
+  agents: {
+    id: string
+    space_id: string
+    spaces: {
+      user_id: string
+    }
+  }
+}
+
+interface BrandSettings {
+  brand_voice?: string
+  target_audience?: string
+  content_guidelines?: string
+}
+
+interface GenerationContext {
+  supabase: any
+  painPoint: PainPoint
+  contentType: string
+  options?: ContentOptions
+  brandSettings?: BrandSettings
+  agentId: string
+  painPointId: string
+  user: any
+}
+
+interface StaticGenerationContext extends GenerationContext {
+  imageEngine: ImageEngine
+}
+
+interface VideoGenerationContext extends GenerationContext {
+  videoEngine: VideoEngine
+}
+
+interface MemeConcept {
+  meme_format: string
+  top_text: string
+  bottom_text: string
+  hook: string
+  cta: string
+  hashtags: string[]
+  image_description: string
+}
+
+interface GeneratedContent {
+  hook?: string
+  body?: string
+  cta?: string
+  hashtags?: string[]
+  visual_suggestions?: any
+}
+
+interface ImageGenerationResult {
+  imageBuffer: Buffer
+  model: string
+  engine: string
+}
+
 export async function POST(request: Request) {
   const startTime = Date.now()
   
@@ -131,7 +204,7 @@ export async function POST(request: Request) {
 /**
  * Handle static content generation (meme, post, deep_post, engagement_post, newsletter, thread)
  */
-async function handleStaticGeneration({ 
+async function handleStaticGeneration({
   supabase, 
   painPoint, 
   contentType, 
@@ -141,7 +214,7 @@ async function handleStaticGeneration({
   painPointId,
   imageEngine,
   user
-}: any) {
+}: StaticGenerationContext) {
   const isMeme = contentType === 'meme'
   
   console.log(`[Static Generation] Generating ${contentType}${isMeme ? ` with ${imageEngine} engine` : ''}`)
@@ -290,7 +363,7 @@ async function handleVideoGeneration({
   painPointId,
   videoEngine,
   user
-}: any) {
+}: VideoGenerationContext) {
   console.log(`[Video Generation] Generating ${contentType} scenario with ${videoEngine} engine`)
   
   // Generate draft scenario with OpenAI
@@ -337,7 +410,17 @@ async function handleVideoGeneration({
   }
 }
 
-async function generateContent({ painPoint, contentType, options, brandSettings }: any) {
+async function generateContent({ 
+  painPoint, 
+  contentType, 
+  options, 
+  brandSettings 
+}: {
+  painPoint: PainPoint
+  contentType: string
+  options?: ContentOptions
+  brandSettings?: BrandSettings
+}): Promise<GeneratedContent> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   
   const systemPrompt = buildSystemPrompt(contentType, brandSettings)
@@ -380,7 +463,15 @@ async function generateContent({ painPoint, contentType, options, brandSettings 
 /**
  * Generate meme concept using OpenAI
  */
-async function generateMemeConcept({ painPoint, options, brandSettings }: any) {
+async function generateMemeConcept({ 
+  painPoint, 
+  options, 
+  brandSettings 
+}: {
+  painPoint: PainPoint
+  options?: ContentOptions
+  brandSettings?: BrandSettings
+}): Promise<MemeConcept> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   
   const systemPrompt = `You are an expert meme creator specializing in relatable, engaging memes about ADHD and neurodiversity.
@@ -445,11 +536,15 @@ Make it relatable, funny, and shareable. The image should be eye-catching and wo
 /**
  * Generate meme image with fallback to DALL-E
  */
-async function generateMemeImage({ concept, options, engine }: any): Promise<{ 
-  imageBuffer: Buffer
-  model: string
-  engine: string 
-}> {
+async function generateMemeImage({ 
+  concept, 
+  options, 
+  engine 
+}: {
+  concept: MemeConcept
+  options?: ContentOptions
+  engine: ImageEngine
+}): Promise<ImageGenerationResult> {
   console.log(`[Image Generation] Attempting with engine: ${engine}`)
   
   // Currently only DALL-E is implemented
@@ -479,11 +574,10 @@ async function generateMemeImage({ concept, options, engine }: any): Promise<{
 /**
  * Generate image using DALL-E 3
  */
-async function generateWithDallE(concept: any, options: any): Promise<{ 
-  imageBuffer: Buffer
-  model: string
-  engine: string 
-}> {
+async function generateWithDallE(
+  concept: MemeConcept, 
+  options?: ContentOptions
+): Promise<ImageGenerationResult> {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error('OpenAI API key not configured')
   }
@@ -543,7 +637,15 @@ Style: Modern meme aesthetic, bold sans-serif font (Impact or similar), white te
 /**
  * Generate draft reel scenario
  */
-async function generateDraftScenario({ painPoint, options, brandSettings }: any) {
+async function generateDraftScenario({ 
+  painPoint, 
+  options, 
+  brandSettings 
+}: {
+  painPoint: PainPoint
+  options?: ContentOptions
+  brandSettings?: BrandSettings
+}) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   
   const systemPrompt = buildReelSystemPrompt(brandSettings)
@@ -582,7 +684,7 @@ async function generateDraftScenario({ painPoint, options, brandSettings }: any)
   }
 }
 
-function buildReelSystemPrompt(brandSettings: any): string {
+function buildReelSystemPrompt(brandSettings?: BrandSettings): string {
   return `You are an expert Instagram Reel/TikTok content creator specializing in creating engaging video content about ADHD and neurodiversity.
 
 Brand Voice: ${brandSettings?.brand_voice || 'empathetic, humorous, relatable'}
@@ -623,7 +725,7 @@ CRITICAL: Return ONLY valid JSON with this exact structure:
 Make it scroll-stopping, relatable, and authentic. The hook MUST grab attention in 3 seconds.`
 }
 
-function buildReelUserPrompt(painPoint: any, options: any): string {
+function buildReelUserPrompt(painPoint: PainPoint, options?: ContentOptions): string {
   return `Create a ${options?.tone || 'empathetic'} reel with a ${options?.goal || 'engagement'} goal.
 
 Pain Point: "${painPoint.pain_point}"
@@ -637,7 +739,7 @@ ${options?.additionalNotes ? `Additional Instructions: ${options.additionalNotes
 Generate a compelling reel scenario that resonates with the target audience and addresses this pain point authentically.`
 }
 
-function buildSystemPrompt(contentType: string, brandSettings: any): string {
+function buildSystemPrompt(contentType: string, brandSettings?: BrandSettings): string {
   const basePrompt = `You are an expert social media content creator specializing in creating engaging content about ADHD and neurodiversity.
 
 Brand Voice: ${brandSettings?.brand_voice || 'empathetic, humorous, relatable'}
@@ -725,7 +827,7 @@ Return JSON:
   return basePrompt + '\n\n' + (formatPrompts[contentType] || formatPrompts.deep_post)
 }
 
-function buildUserPrompt(painPoint: any, options: any): string {
+function buildUserPrompt(painPoint: PainPoint, options?: ContentOptions): string {
   return `Create ${options?.tone || 'empathetic'} content with a ${options?.goal || 'engagement'} goal.
 
 Pain Point: "${painPoint.pain_point}"
