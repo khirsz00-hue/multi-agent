@@ -33,8 +33,7 @@ const menuItems = [
     section: 'Dashboard',
     icon: LayoutDashboard,
     items: [
-      { label: 'Agent Overview', href: '/spaces', icon: LayoutDashboard },
-      { label: 'My Spaces', href: '/spaces', icon: TrendingUp },
+      { label: 'My Spaces', href: '/spaces', icon: LayoutDashboard },
     ]
   },
   {

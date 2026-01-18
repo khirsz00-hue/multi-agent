@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Sidebar from './Sidebar'
 import { Button } from './ui/button'
 import { Menu } from 'lucide-react'
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet'
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from './ui/sheet'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -28,12 +28,17 @@ export default function AppLayout({ children, user }: AppLayoutProps) {
             variant="ghost" 
             size="icon" 
             className="lg:hidden fixed top-4 left-4 z-40"
+            aria-label="Toggle navigation menu"
           >
             <Menu className="h-6 w-6" />
             <span className="sr-only">Toggle menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64">
+        <SheetContent side="left" className="p-0 w-64" aria-describedby="sidebar-description">
+          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+          <span id="sidebar-description" className="sr-only">
+            Navigation menu with dashboard, content creation, calendar, analytics, and settings sections
+          </span>
           <Sidebar user={user} />
         </SheetContent>
       </Sheet>
