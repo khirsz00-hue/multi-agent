@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     
     if (error) throw error
     
-    // If image engine, generate image now
+    // If image engine is selected, generate image now
     if (engine === 'dall-e-3' && content.visual_suggestions?.image_description) {
       try {
         const imageUrl = await generateImage(content.visual_suggestions.image_description, user.id, supabase)

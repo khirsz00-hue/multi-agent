@@ -93,26 +93,26 @@ export function VideoGenerationModal({
     }
   }, [jobId, pollInterval, onComplete, onError])
 
-  // Start polling when modal opens
+  // Start polling when modal opens with recursive setTimeout for exponential backoff
   useEffect(() => {
     if (!open || !jobId) return
 
-    // Initial check
-    checkJobStatus()
-
-    // Set up polling with exponential backoff
-    let delay = 2000 // Start with 2 seconds
+    let timeoutId: NodeJS.Timeout | null = null
+    let currentDelay = 2000 // Start with 2 seconds
     const maxDelay = 10000 // Max 10 seconds between polls
 
-    const poll = () => {
-      checkJobStatus()
+    const poll = async () => {
+      await checkJobStatus()
       
       // Increase delay for next poll (exponential backoff)
-      delay = Math.min(delay * 1.2, maxDelay)
+      currentDelay = Math.min(currentDelay * 1.2, maxDelay)
+      
+      // Schedule next poll with updated delay
+      timeoutId = setTimeout(poll, currentDelay)
     }
 
-    const interval = setInterval(poll, delay)
-    setPollInterval(interval)
+    // Initial poll
+    poll()
 
     // Elapsed time counter
     const timeCounter = setInterval(() => {
@@ -121,7 +121,7 @@ export function VideoGenerationModal({
 
     // Cleanup
     return () => {
-      if (interval) clearInterval(interval)
+      if (timeoutId) clearTimeout(timeoutId)
       if (timeCounter) clearInterval(timeCounter)
     }
   }, [open, jobId, checkJobStatus])

@@ -255,6 +255,14 @@ export function ContentCreationModal({
     setError(null)
     
     try {
+      // Build common options
+      const generationOptions = { 
+        tone, 
+        goal, 
+        additionalNotes, 
+        engine: selectedEngine 
+      }
+      
       // For reels, use two-stage generation
       if (contentType === 'reel') {
         const res = await fetch('/api/content/draft-reel', {
@@ -262,7 +270,7 @@ export function ContentCreationModal({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             painPointId: painPoint.id,
-            options: { tone, goal, additionalNotes, engine: selectedEngine }
+            options: generationOptions
           })
         })
         
@@ -284,7 +292,7 @@ export function ContentCreationModal({
           body: JSON.stringify({
             painPointId: painPoint.id,
             contentType,
-            options: { tone, goal, additionalNotes, engine: selectedEngine }
+            options: generationOptions
           })
         })
         
