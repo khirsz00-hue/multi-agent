@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     )
     
     // Generuj obrazek z DALL-E 3 (z retry)
-    let bufor: Buffer
+    let bufor: Buffer | undefined
     let retries = 2
     let lastError: Error | null = null
     
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
       }
     }
     
-    if (!bufor!) {
+    if (!bufor) {
       throw lastError || new Error('Nie udało się wygenerować obrazka po 3 próbach')
     }
     

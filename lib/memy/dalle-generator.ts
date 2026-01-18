@@ -32,7 +32,11 @@ export async function generujObrazekMemuDallE(prompt: string): Promise<Buffer> {
       response_format: 'b64_json'
     })
     
-    const base64 = response.data[0]?.b64_json
+    if (!response.data || !response.data[0]) {
+      throw new Error('Brak obrazka z DALL-E')
+    }
+    
+    const base64 = response.data[0].b64_json
     if (!base64) {
       throw new Error('Brak obrazka z DALL-E')
     }

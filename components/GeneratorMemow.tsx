@@ -7,6 +7,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Loader2, Image as ImageIcon } from 'lucide-react'
 
@@ -88,11 +89,14 @@ export function GeneratorMemow({
       {obraz && (
         <div className="space-y-2">
           <p className="text-sm text-green-600">✅ Mem wygenerowany!</p>
-          <img 
-            src={obraz} 
-            alt="Wygenerowany mem" 
-            className="w-full rounded-lg border-2 border-green-500"
-          />
+          <div className="relative w-full aspect-square">
+            <Image 
+              src={obraz} 
+              alt="Wygenerowany mem" 
+              fill
+              className="rounded-lg border-2 border-green-500 object-contain"
+            />
+          </div>
         </div>
       )}
     </div>
