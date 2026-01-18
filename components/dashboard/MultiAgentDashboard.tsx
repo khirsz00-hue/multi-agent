@@ -159,9 +159,17 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
         <h1 className="text-3xl font-bold">Multi-Agent Marketing Dashboard</h1>
         <div className="flex gap-2">
           <Link href="/dashboard/content-calendar">
-            <Button variant="outline">
+            <Button variant="outline" className="relative">
               <Calendar className="h-4 w-4 mr-2" />
               Content Calendar
+              {upcomingContent.length > 0 && (
+                <Badge 
+                  variant="secondary" 
+                  className="ml-2 bg-blue-500 text-white"
+                >
+                  {upcomingContent.length}
+                </Badge>
+              )}
             </Button>
           </Link>
           <Button onClick={loadDashboard} variant="outline" size="sm">

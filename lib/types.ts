@@ -108,6 +108,14 @@ export interface ContentDraft {
   goal: string;
   draft: EngagementPostContent | ThreadContent | Record<string, unknown>;
   status: 'draft' | 'approved' | 'published' | 'archived';
+  // Multi-engine support
+  image_engine?: string; // 'dalle3', 'midjourney', 'stable-diffusion', etc.
+  video_engine?: string; // 'runway', 'pika', 'luma', etc.
+  video_status?: 'pending' | 'processing' | 'completed' | 'failed';
+  video_task_id?: string; // UUID reference to video_tasks.id (stored as string in TypeScript)
+  video_eta?: string; // Estimated completion time
+  video_url?: string; // Final video storage URL
+  generation_cost?: number; // Cost tracking in decimal
   created_at: string;
   updated_at: string;
 }
@@ -116,4 +124,38 @@ export interface ValidationResult {
   valid: boolean;
   errors: string[];
   warnings: string[];
+}
+
+// Video Task Types
+export type VideoTaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+export interface VideoTask {
+  id: string;
+  content_draft_id: string;
+  task_id: string; // External task ID from video generation service
+  engine: string; // 'runway', 'pika', 'luma', etc.
+  status: VideoTaskStatus;
+  error_message?: string;
+  video_url?: string;
+  progress: number; // 0-100
+  created_at: string;
+  completed_at?: string;
+}
+
+// Image Generation Types
+export type ImageGenerationStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+export interface ImageGeneration {
+  id: string;
+  content_draft_id: string;
+  engine: string; // 'dalle3', 'midjourney', 'stable-diffusion', etc.
+  status: ImageGenerationStatus;
+  image_url?: string;
+  storage_path?: string;
+  error_message?: string;
+  version: number; // Version tracking for iterative refinement
+  parent_generation_id?: string;
+  refinement_prompt?: string;
+  generation_params?: Record<string, unknown>; // Generation parameters (prompt, size, etc.)
+  created_at: string;
 }

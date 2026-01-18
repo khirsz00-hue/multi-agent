@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
@@ -13,17 +13,31 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Copy, Calendar, Loader2, Video, ImageIcon, FileText, Mail, Twitter, Sparkles, RefreshCw } from 'lucide-react'
+import { Copy, Calendar, Loader2, Video, ImageIcon, FileText, Mail, Twitter, Sparkles, RefreshCw, Film } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
+import VideoGenerationModal from './VideoGenerationModal'
+import { ImageEngineSelector } from '@/components/ImageEngineSelector'
+import { VideoEngineSelector } from '@/components/VideoEngineSelector'
+import type { ImageEngine, VideoEngine } from '@/components/EngineSelector'
 
 interface ContentCreationModalProps {
   open: boolean
   onClose: () => void
   painPoint: any
 }
+
+// Engine validation helpers
+const VALID_IMAGE_ENGINES: ImageEngine[] = ['google-ai', 'dall-e', 'replicate']
+const VALID_VIDEO_ENGINES: VideoEngine[] = ['runway', 'pika']
+
+const isValidImageEngine = (engine: string): engine is ImageEngine => 
+  VALID_IMAGE_ENGINES.includes(engine as ImageEngine)
+
+const isValidVideoEngine = (engine: string): engine is VideoEngine => 
+  VALID_VIDEO_ENGINES.includes(engine as VideoEngine)
 
 export default function ContentCreationModal({ open, onClose, painPoint }: ContentCreationModalProps) {
   const router = useRouter()
@@ -35,6 +49,10 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
   const [goal, setGoal] = useState('engagement')
   const [generatedContent, setGeneratedContent] = useState<any>(null)
   
+  // Engine selection state
+  const [imageEngine, setImageEngine] = useState<ImageEngine>('dall-e')
+  const [videoEngine, setVideoEngine] = useState<VideoEngine>('pika')
+  
   // Meme-specific state
   const [memeImage, setMemeImage] = useState<any>(null)
   const [memeVersions, setMemeVersions] = useState<any[]>([])
@@ -44,6 +62,32 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
   const [refiningMeme, setRefiningMeme] = useState(false)
   const [loadingVersions, setLoadingVersions] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
+  
+  // Video generation state
+  const [showVideoModal, setShowVideoModal] = useState(false)
+  const [videoTaskId, setVideoTaskId] = useState<string | null>(null)
+  const [generatingVideo, setGeneratingVideo] = useState(false)
+  // Load engine preferences from localStorage on mount
+  useEffect(() => {
+    const savedImageEngine = localStorage.getItem('preferredImageEngine')
+    const savedVideoEngine = localStorage.getItem('preferredVideoEngine')
+    
+    if (savedImageEngine && isValidImageEngine(savedImageEngine)) {
+      setImageEngine(savedImageEngine)
+    }
+    if (savedVideoEngine && isValidVideoEngine(savedVideoEngine)) {
+      setVideoEngine(savedVideoEngine)
+    }
+  }, [])
+  
+  // Save engine preferences to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('preferredImageEngine', imageEngine)
+  }, [imageEngine])
+  
+  useEffect(() => {
+    localStorage.setItem('preferredVideoEngine', videoEngine)
+  }, [videoEngine])
   
   const getRecommendations = async () => {
     if (!painPoint) return
@@ -82,7 +126,7 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             painPointId: painPoint.id,
-            options: { tone, goal }
+            options: { tone, goal, engine: imageEngine }
           })
         })
         
@@ -93,6 +137,21 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
         setMemeImage(data.memeImage)
         // Load all versions
         await loadMemeVersions(data.contentDraft.id)
+      } else if (selectedType === 'reel') {
+        const res = await fetch('/api/content/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            painPointId: painPoint.id,
+            contentType: selectedType,
+            options: { tone, goal, engine: videoEngine }
+          })
+        })
+        
+        if (!res.ok) throw new Error('Failed to generate content')
+        
+        const data = await res.json()
+        setGeneratedContent(data.draft)
       } else {
         const res = await fetch('/api/content/generate', {
           method: 'POST',
@@ -100,7 +159,7 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
           body: JSON.stringify({
             painPointId: painPoint.id,
             contentType: selectedType,
-            options: { tone, goal }
+            options: { tone, goal, engine: imageEngine }
           })
         })
         
@@ -179,7 +238,8 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           painPointId: painPoint.id,
-          contentDraftId: contentDraftId || generatedContent?.id
+          contentDraftId: contentDraftId || generatedContent?.id,
+          options: { engine: imageEngine }
         })
       })
       
@@ -239,6 +299,29 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
     
     navigator.clipboard.writeText(text)
     alert('Content copied to clipboard!')
+  }
+  
+  const generateVideo = async () => {
+    if (!generatedContent?.id) return
+    
+    setGeneratingVideo(true)
+    try {
+      const res = await fetch('/api/video/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ draftId: generatedContent.id })
+      })
+      
+      if (!res.ok) throw new Error('Failed to start video generation')
+      
+      const data = await res.json()
+      setVideoTaskId(data.taskId)
+      setShowVideoModal(true)
+    } catch (error: any) {
+      alert(error.message || 'Failed to generate video')
+    } finally {
+      setGeneratingVideo(false)
+    }
   }
   
   const getContentIcon = (type: string) => {
@@ -362,6 +445,27 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                         </Select>
                       </div>
                     </div>
+                    
+                    {/* Engine Selection */}
+                    {selectedType && (
+                      <>
+                        {(selectedType === 'meme' || selectedType === 'engagement_post' || selectedType === 'deep_post') && (
+                          <ImageEngineSelector
+                            selectedEngine={imageEngine}
+                            onEngineChange={setImageEngine}
+                            className="mt-4"
+                          />
+                        )}
+                        
+                        {selectedType === 'reel' && (
+                          <VideoEngineSelector
+                            selectedEngine={videoEngine}
+                            onEngineChange={setVideoEngine}
+                            className="mt-4"
+                          />
+                        )}
+                      </>
+                    )}
                     
                     <Button 
                       onClick={generateContent}
@@ -610,6 +714,41 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
                   </div>
                 )}
                 
+                {/* Video Generation Button - Show for reels */}
+                {generatedContent.content_type === 'reel' && (
+                  <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Film className="h-5 w-5 text-blue-600" />
+                        <div className="flex-1">
+                          <h4 className="font-medium text-blue-900">Turn into Video</h4>
+                          <p className="text-sm text-blue-700">
+                            Generate an engaging video from your reel content
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={generateVideo}
+                        disabled={generatingVideo}
+                        className="w-full"
+                        variant="default"
+                      >
+                        {generatingVideo ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Starting...
+                          </>
+                        ) : (
+                          <>
+                            <Film className="h-4 w-4 mr-2" />
+                            Generate Video
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+                
                 <div className="flex gap-2">
                   <Button 
                     onClick={copyToClipboard}
@@ -650,6 +789,24 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
           </div>
         )}
       </DialogContent>
+      
+      {/* Video Generation Modal */}
+      <VideoGenerationModal
+        open={showVideoModal}
+        onClose={() => {
+          setShowVideoModal(false)
+          setVideoTaskId(null)
+        }}
+        taskId={videoTaskId}
+        draftId={generatedContent?.id}
+        onVideoReady={(videoUrl) => {
+          console.log('Video ready:', videoUrl)
+          // Optionally update the draft with the video URL
+        }}
+        onRetry={(newTaskId) => {
+          setVideoTaskId(newTaskId)
+        }}
+      />
     </Dialog>
   )
 }
