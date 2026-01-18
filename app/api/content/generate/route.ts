@@ -270,35 +270,38 @@ async function handleStaticGeneration({
   console.log(`[Static Generation] Generating ${contentType}${isMeme ? ` with ${imageEngine} engine` : ''}`)
   
   // Generate content with OpenAI
-  const content = isMeme 
-    ? await generateMemeConcept({ painPoint, options, brandSettings })
-    : await generateContent({ painPoint, contentType, options, brandSettings })
+  let draftData: any
   
-  // For memes, save the structured format
-  const draftData = isMeme ? {
-    agent_id: agentId,
-    pain_point_id: painPointId,
-    content_type: contentType,
-    hook: content.hook,
-    body: `Top: ${content.top_text}\n\nBottom: ${content.bottom_text}`,
-    cta: content.cta,
-    hashtags: content.hashtags || [],
-    tone: options?.tone || 'humorous',
-    goal: options?.goal || 'viral',
-    target_platform: 'instagram',
-    visual_suggestions: {
-      meme_format: content.meme_format,
-      image_description: content.image_description
-    },
-    status: 'draft'
-  } : {
-    agent_id: agentId,
-    pain_point_id: painPointId,
-    content_type: contentType,
-    ...content,
-    tone: options?.tone || 'empathetic',
-    goal: options?.goal || 'engagement',
-    target_platform: options?.platform || getDefaultPlatform(contentType)
+  if (isMeme) {
+    const memeConcept = await generateMemeConcept({ painPoint, options, brandSettings })
+    draftData = {
+      agent_id: agentId,
+      pain_point_id: painPointId,
+      content_type: contentType,
+      hook: memeConcept.hook,
+      body: `Top: ${memeConcept.top_text}\n\nBottom: ${memeConcept.bottom_text}`,
+      cta: memeConcept.cta,
+      hashtags: memeConcept.hashtags || [],
+      tone: options?.tone || 'humorous',
+      goal: options?.goal || 'viral',
+      target_platform: 'instagram',
+      visual_suggestions: {
+        meme_format: memeConcept.meme_format,
+        image_description: memeConcept.image_description
+      },
+      status: 'draft'
+    }
+  } else {
+    const content = await generateContent({ painPoint, contentType, options, brandSettings })
+    draftData = {
+      agent_id: agentId,
+      pain_point_id: painPointId,
+      content_type: contentType,
+      ...content,
+      tone: options?.tone || 'empathetic',
+      goal: options?.goal || 'engagement',
+      target_platform: options?.platform || getDefaultPlatform(contentType)
+    }
   }
   
   // Save draft to database
@@ -323,9 +326,23 @@ async function handleStaticGeneration({
   if (isMeme) {
     console.log(`[Static Generation] Generating meme image with ${imageEngine}`)
     
+    // Extract meme concept from draft data
+    const topText = draftData.body.split('\n')[0].replace('Top: ', '')
+    const bottomText = draftData.body.split('\n')[2]?.replace('Bottom: ', '') || ''
+    
+    const memeConcept: MemeConcept = {
+      meme_format: draftData.visual_suggestions.meme_format,
+      top_text: topText,
+      bottom_text: bottomText,
+      image_description: draftData.visual_suggestions.image_description,
+      hook: draftData.hook,
+      cta: draftData.cta,
+      hashtags: draftData.hashtags
+    }
+    
     try {
       const imageData = await generateMemeImage({
-        concept: content,
+        concept: memeConcept,
         options,
         engine: imageEngine
       })
@@ -360,10 +377,10 @@ async function handleStaticGeneration({
         .insert({
           content_draft_id: draft.id,
           agent_id: agentId,
-          original_prompt: content.image_description,
-          meme_format: content.meme_format,
-          top_text: content.top_text,
-          bottom_text: content.bottom_text,
+          original_prompt: memeConcept.image_description,
+          meme_format: memeConcept.meme_format,
+          top_text: memeConcept.top_text,
+          bottom_text: memeConcept.bottom_text,
           image_url: publicUrl,
           storage_path: storagePath,
           version: 1,
@@ -373,7 +390,7 @@ async function handleStaticGeneration({
             generated_at: new Date().toISOString(),
             model: imageData.model,
             engine: imageData.engine,
-            concept: content
+            concept: memeConcept
           }
         })
         .select()
