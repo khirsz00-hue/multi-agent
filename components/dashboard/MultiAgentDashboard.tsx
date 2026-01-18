@@ -150,17 +150,20 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
   }
 
   if (loading) {
-    return <div className="p-6">Loading dashboard...</div>
+    return <div className="p-6">Ładowanie dashboardu...</div>
   }
 
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Multi-Agent Marketing Dashboard</h1>
+        <h1 className="text-3xl font-bold">Dashboard Multi-Agentowy Marketingu</h1>
         <div className="flex gap-2">
           <Link href="/dashboard/content-calendar">
             <Button variant="outline" className="relative">
               <Calendar className="h-4 w-4 mr-2" />
+<<<<<<< HEAD
+              Kalendarz treści
+=======
               Content Calendar
               {upcomingContent.length > 0 && (
                 <Badge 
@@ -170,10 +173,11 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
                   {upcomingContent.length}
                 </Badge>
               )}
+>>>>>>> b5afb276467617e4233ee881a307558841b5d0af
             </Button>
           </Link>
           <Button onClick={loadDashboard} variant="outline" size="sm">
-            Refresh
+            Odśwież
           </Button>
         </div>
       </div>
@@ -184,7 +188,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5" />
-              KPI Progress
+              Postęp KPI
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -202,8 +206,8 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
               </div>
               <Progress value={kpiProgress.percentage} className="h-3" />
               <div className="flex justify-between text-sm text-muted-foreground">
-                <span>{kpiProgress.percentage}% complete</span>
-                <span>{kpiProgress.daysLeft} days left</span>
+                <span>{kpiProgress.percentage}% ukończone</span>
+                <span>{kpiProgress.daysLeft} dni pozostało</span>
               </div>
             </div>
           </CardContent>
@@ -216,7 +220,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-primary" />
-              Today&apos;s Content
+              Treść na dziś
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -225,7 +229,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
               <div className="flex gap-2 mb-4">
                 <Badge>{todayContent.content_type}</Badge>
                 <Badge variant="outline">
-                  {new Date(todayContent.publish_date).toLocaleDateString()}
+                  {new Date(todayContent.publish_date).toLocaleDateString('pl-PL')}
                 </Badge>
               </div>
             </div>
@@ -238,7 +242,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
 
             {todayContent.audience_insights && (
               <div className="text-sm text-muted-foreground">
-                <strong>Addresses:</strong> {todayContent.audience_insights.pain_point}
+                <strong>Adres:</strong> {todayContent.audience_insights.pain_point}
               </div>
             )}
 
@@ -247,17 +251,17 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
                 {copied ? (
                   <>
                     <Check className="h-4 w-4 mr-2" />
-                    Copied!
+                    Skopiowano!
                   </>
                 ) : (
                   <>
                     <Copy className="h-4 w-4 mr-2" />
-                    Copy to Clipboard
+                    Kopiuj do schowka
                   </>
                 )}
               </Button>
               <Button onClick={handleMarkPublished} variant="outline" className="flex-1">
-                Mark as Published
+                Oznacz jako opublikowane
               </Button>
             </div>
           </CardContent>
@@ -265,7 +269,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
       ) : (
         <Card>
           <CardContent className="pt-6 text-center text-muted-foreground">
-            No content scheduled for today. Enjoy your day off! 🎉
+            Brak treści zaplanowanej na dziś. Ciesz się dniem wolnym! 🎉
           </CardContent>
         </Card>
       )}
@@ -277,7 +281,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Top Pain Points
+              Główne punkty bólu
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -294,7 +298,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground">No pain points yet</p>
+              <p className="text-muted-foreground">Brak punktów bólu</p>
             )}
           </CardContent>
         </Card>
@@ -304,7 +308,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              This Week
+              Ten tydzień
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -312,7 +316,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
               <div className="space-y-2">
                 {upcomingContent.slice(0, 5).map(content => (
                   <div key={content.id} className="flex items-center justify-between text-sm">
-                    <span>{new Date(content.publish_date).toLocaleDateString()}</span>
+                    <span>{new Date(content.publish_date).toLocaleDateString('pl-PL')}</span>
                     <span className="text-muted-foreground truncate ml-2">
                       {content.title}
                     </span>
@@ -320,7 +324,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground">No upcoming content</p>
+              <p className="text-muted-foreground">Brak zaplanowanej treści</p>
             )}
           </CardContent>
         </Card>
@@ -332,26 +336,26 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Monthly Performance
+              Wydajność miesięczna
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <div className="text-2xl font-bold">{stats.published}</div>
-                <div className="text-sm text-muted-foreground">Published</div>
+                <div className="text-sm text-muted-foreground">Opublikowane</div>
               </div>
               <div>
                 <div className="text-2xl font-bold">{stats.total}</div>
-                <div className="text-sm text-muted-foreground">Total</div>
+                <div className="text-sm text-muted-foreground">Razem</div>
               </div>
               <div>
                 <div className="text-2xl font-bold">{stats.completion_rate}%</div>
-                <div className="text-sm text-muted-foreground">Completion</div>
+                <div className="text-sm text-muted-foreground">Ukończenie</div>
               </div>
               <div>
                 <div className="text-2xl font-bold">🔥 {stats.streak}</div>
-                <div className="text-sm text-muted-foreground">Day Streak</div>
+                <div className="text-sm text-muted-foreground">Seria dni</div>
               </div>
             </div>
           </CardContent>
@@ -361,7 +365,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
       {/* Agent Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Your Agents</CardTitle>
+          <CardTitle>Twoi agenci</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
