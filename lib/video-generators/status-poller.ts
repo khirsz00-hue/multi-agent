@@ -2,6 +2,9 @@
  * Video Status Poller
  * 
  * Unified status polling for Runway and Pika video generation engines
+ * 
+ * Note: Caching is handled at the API route level via database timestamps,
+ * not in-memory, to ensure compatibility with serverless environments.
  */
 
 export type VideoEngine = 'runway' | 'pika'
@@ -18,75 +21,24 @@ export interface VideoStatusResponse {
   video_url: string | null
 }
 
-interface StatusCache {
-  [key: string]: {
-    data: VideoStatusResponse
-    timestamp: number
-  }
-}
-
-// In-memory cache for status responses (5 second TTL)
-const statusCache: StatusCache = {}
-const CACHE_TTL_MS = 5000
-
-/**
- * Get cached status if available and not expired
- */
-function getCachedStatus(taskId: string, engine: VideoEngine): VideoStatusResponse | null {
-  const cacheKey = `${engine}:${taskId}`
-  const cached = statusCache[cacheKey]
-  
-  if (!cached) return null
-  
-  const age = Date.now() - cached.timestamp
-  if (age > CACHE_TTL_MS) {
-    // Expired, remove from cache
-    delete statusCache[cacheKey]
-    return null
-  }
-  
-  return cached.data
-}
-
-/**
- * Cache status response
- */
-function cacheStatus(taskId: string, engine: VideoEngine, data: VideoStatusResponse): void {
-  const cacheKey = `${engine}:${taskId}`
-  statusCache[cacheKey] = {
-    data,
-    timestamp: Date.now()
-  }
-}
-
 /**
  * Poll video generation status from external API
+ * 
+ * Note: Caching is handled by the API route layer via database timestamps,
+ * not in this function, to ensure compatibility with serverless environments.
  */
 export async function pollVideoStatus(
   taskId: string,
   engine: VideoEngine
 ): Promise<VideoStatusResponse> {
-  // Check cache first
-  const cached = getCachedStatus(taskId, engine)
-  if (cached) {
-    return cached
-  }
-  
   // Poll based on engine
-  let response: VideoStatusResponse
-  
   if (engine === 'runway') {
-    response = await pollRunwayStatus(taskId)
+    return await pollRunwayStatus(taskId)
   } else if (engine === 'pika') {
-    response = await pollPikaStatus(taskId)
+    return await pollPikaStatus(taskId)
   } else {
     throw new Error(`Unsupported engine: ${engine}`)
   }
-  
-  // Cache the response
-  cacheStatus(taskId, engine, response)
-  
-  return response
 }
 
 /**
@@ -219,12 +171,4 @@ function mapPikaStatus(pikaStatus: string): VideoStatus {
   }
   
   return statusMap[pikaStatus.toLowerCase()] || 'pending'
-}
-
-/**
- * Clear cache for a specific task (useful after updates)
- */
-export function clearTaskCache(taskId: string, engine: VideoEngine): void {
-  const cacheKey = `${engine}:${taskId}`
-  delete statusCache[cacheKey]
 }

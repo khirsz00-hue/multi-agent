@@ -2,6 +2,29 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { pollVideoStatus, type VideoEngine } from '@/lib/video-generators/status-poller'
 
+// Type for nested database query result
+interface VideoTaskWithDraft {
+  id: string
+  content_draft_id: string
+  external_task_id: string
+  engine: string
+  status: string
+  progress: number
+  eta_seconds: number | null
+  error_message: string | null
+  video_url: string | null
+  last_polled_at: string | null
+  content_drafts: {
+    id: string
+    agents: {
+      id: string
+      spaces: {
+        user_id: string
+      }
+    }
+  }
+}
+
 /**
  * GET /api/video-status/[task_id]?engine={runway|pika}
  * 
@@ -18,17 +41,17 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ task_id: string }> }
 ) {
+  const supabase = await createClient()
+  const { task_id } = await context.params
+  const { searchParams } = new URL(request.url)
+  const engine = searchParams.get('engine')
+  
   try {
-    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
-    const { task_id } = await context.params
-    const { searchParams } = new URL(request.url)
-    const engine = searchParams.get('engine') as VideoEngine | null
     
     // Validate engine parameter
     if (!engine || (engine !== 'runway' && engine !== 'pika')) {
@@ -52,7 +75,7 @@ export async function GET(
       `)
       .eq('external_task_id', task_id)
       .eq('engine', engine)
-      .single()
+      .single<VideoTaskWithDraft>()
     
     if (taskError || !task) {
       return NextResponse.json({ 
@@ -61,7 +84,7 @@ export async function GET(
     }
     
     // Verify user owns the content draft
-    const draft = task.content_drafts as any
+    const draft = task.content_drafts
     if (!draft || draft.agents?.spaces?.user_id !== user.id) {
       return NextResponse.json({ 
         error: 'Unauthorized access to this task' 
@@ -91,7 +114,7 @@ export async function GET(
     // Poll external API for status
     let statusResponse
     try {
-      statusResponse = await pollVideoStatus(task_id, engine)
+      statusResponse = await pollVideoStatus(task_id, engine as VideoEngine)
     } catch (pollError: any) {
       // Log polling error to database
       await supabase
@@ -144,13 +167,8 @@ export async function GET(
     console.error('Video status polling error:', error)
     
     // Log error to database if possible
-    try {
-      const supabase = await createClient()
-      const { task_id } = await context.params
-      const { searchParams } = new URL(request.url)
-      const engine = searchParams.get('engine')
-      
-      if (task_id && engine) {
+    if (task_id && engine) {
+      try {
         await supabase
           .from('video_generation_tasks')
           .update({
@@ -159,9 +177,9 @@ export async function GET(
           })
           .eq('external_task_id', task_id)
           .eq('engine', engine)
+      } catch (logError) {
+        console.error('Failed to log error:', logError)
       }
-    } catch (logError) {
-      console.error('Failed to log error:', logError)
     }
     
     return NextResponse.json({ 
