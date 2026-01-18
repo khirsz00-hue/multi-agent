@@ -2,18 +2,12 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { PikaService } from '@/lib/video-generators/pika'
 
-interface VideoStatusParams {
-  params: {
-    task_id: string
-  }
-}
-
 export async function GET(
   request: Request,
-  { params }: VideoStatusParams
+  { params }: { params: Promise<{ task_id: string }> }
 ) {
   try {
-    const { task_id } = params
+    const { task_id } = await params
     const { searchParams } = new URL(request.url)
     const engine = searchParams.get('engine') || 'pika'
 
