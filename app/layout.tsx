@@ -1,24 +1,27 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import Navbar from '@/components/Navbar'
+import AppLayout from '@/components/AppLayout'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Multi-Agent Platform',
   description: 'AI-powered multi-agent platform with spaces, file uploads, and chat',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        <Navbar />
-        <main className="min-h-screen">
+        <AppLayout user={user}>
           {children}
-        </main>
+        </AppLayout>
       </body>
     </html>
   )
