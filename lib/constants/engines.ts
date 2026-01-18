@@ -3,7 +3,7 @@
  * Default configurations for image and video generation engines
  */
 
-import { ImageEngine, VideoEngine, ContentType } from '../content-engines'
+import { ImageEngine, VideoEngine, ContentType, isVideoContentType } from '../content-engines'
 import { EngineCapabilities } from '../types/content'
 
 /**
@@ -266,8 +266,7 @@ export function getRecommendedEngine(
   contentType: ContentType,
   priority: 'speed' | 'quality' | 'cost'
 ): ImageEngine | VideoEngine {
-  const isVideoContent = 
-    contentType === ContentType.REEL || contentType === ContentType.SHORT_FORM
+  const isVideoContent = isVideoContentType(contentType)
   
   if (isVideoContent) {
     switch (priority) {

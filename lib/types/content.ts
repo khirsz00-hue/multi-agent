@@ -85,7 +85,7 @@ export interface ContentGenerationResponse {
   contentDraft?: {
     id: string
     contentType: ContentType
-    content: any
+    content: Record<string, unknown>
     metadata: ContentMetadata
   }
   
@@ -262,7 +262,7 @@ export interface ContentGenerationJob {
   error?: {
     message: string
     code?: string
-    details?: any
+    details?: Record<string, unknown>
   }
   
   /**

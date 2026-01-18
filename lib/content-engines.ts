@@ -107,8 +107,7 @@ export function selectEngines(
   
   // Apply prioritization if specified
   if (options) {
-    const adjusted = applyPrioritization(contentType, defaultMapping, options)
-    return adjusted
+    return applyPrioritization(contentType, defaultMapping, options)
   }
   
   // Return default mapping
@@ -170,6 +169,13 @@ export function getEngineDisplayName(engine: ImageEngine | VideoEngine): string 
 }
 
 /**
+ * Check if a content type requires video generation
+ */
+export function isVideoContentType(contentType: ContentType): boolean {
+  return contentType === ContentType.REEL || contentType === ContentType.SHORT_FORM
+}
+
+/**
  * Validate if an engine supports a specific content type
  */
 export function isEngineCompatible(
@@ -179,7 +185,7 @@ export function isEngineCompatible(
   const mapping = DEFAULT_ENGINE_MAPPINGS[contentType]
   
   // Check if it's a video content type
-  const isVideoContent = contentType === ContentType.REEL || contentType === ContentType.SHORT_FORM
+  const isVideoContent = isVideoContentType(contentType)
   
   if (isVideoContent) {
     return Object.values(VideoEngine).includes(engine as VideoEngine)
