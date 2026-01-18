@@ -10,6 +10,11 @@ import { createClient } from '@/lib/supabase/server'
 import { generujPromptDlaDallE } from '@/lib/memy/prompt-generator'
 import { generujObrazekMemuDallE } from '@/lib/memy/dalle-generator'
 import { wrzucObrazekDoStorage } from '@/lib/memy/storage-manager'
+import { ImageEngine } from '@/lib/content-engines'
+import { ENGINE_CAPABILITIES } from '@/lib/constants/engines'
+
+// Get DALL-E cost from engine capabilities
+const DALLE_COST = ENGINE_CAPABILITIES[ImageEngine.DALL_E].costPerGeneration
 
 export async function POST(request: Request) {
   try {
@@ -75,7 +80,7 @@ export async function POST(request: Request) {
         .update({
           image_url: url_obrazka,
           image_engine: 'dalle',
-          generation_cost: 0.02  // Przybliżony koszt DALL-E 3
+          generation_cost: DALLE_COST
         })
         .eq('id', content_draft_id)
       
