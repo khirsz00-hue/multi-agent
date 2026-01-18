@@ -19,6 +19,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { ScenarioEditor } from './ScenarioEditor'
 import { type ReelScenario } from '@/lib/reel-validator'
+import { EngineSelector, type Engine, type ImageEngine, type VideoEngine } from './EngineSelector'
+import { VideoGenerationModal } from './VideoGenerationModal'
 
 interface ContentCreationModalProps {
   painPoint: {
@@ -78,6 +80,16 @@ export function ContentCreationModal({
   const [validation, setValidation] = useState<any>(null)
   const [qualityScore, setQualityScore] = useState(0)
   
+  // Engine selection state
+  const [selectedEngine, setSelectedEngine] = useState<Engine>('dall-e-3')
+  const [recommendedEngine, setRecommendedEngine] = useState<Engine | undefined>(undefined)
+  const [showEngineSelector, setShowEngineSelector] = useState(false)
+  
+  // Video generation state
+  const [videoJobId, setVideoJobId] = useState<string | null>(null)
+  const [showVideoModal, setShowVideoModal] = useState(false)
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  
   const contentTypeLabels: Record<string, string> = {
     reel: 'Instagram Reel/TikTok',
     meme: 'Meme',
@@ -86,6 +98,11 @@ export function ContentCreationModal({
     newsletter: 'Newsletter Section',
     thread: 'Twitter Thread'
   }
+  
+  // Determine if content type needs image or video engine
+  const needsImageEngine = ['meme', 'deep_post', 'engagement_post'].includes(contentType)
+  const needsVideoEngine = ['reel'].includes(contentType)
+  const needsOptionalImageEngine = ['newsletter'].includes(contentType)
   
   const flowSteps = CONTENT_FLOWS[contentType as keyof typeof CONTENT_FLOWS] || ['generate', 'finalize']
   const totalSteps = flowSteps.length
@@ -178,6 +195,8 @@ export function ContentCreationModal({
   // Load AI recommendations
   useEffect(() => {
     loadRecommendations()
+    // Get engine recommendation based on content type
+    getEngineRecommendation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   
@@ -211,11 +230,39 @@ export function ContentCreationModal({
     }
   }
   
+  const getEngineRecommendation = async () => {
+    try {
+      // Set default engine based on content type
+      if (needsImageEngine) {
+        setSelectedEngine('dall-e-3')
+        setRecommendedEngine('dall-e-3')
+      } else if (needsVideoEngine) {
+        // Default to remotion for video
+        setSelectedEngine('remotion')
+        setRecommendedEngine('remotion')
+        // Could call video recommendation API here if we have a draft
+      } else if (needsOptionalImageEngine) {
+        setSelectedEngine('dall-e-3')
+        setRecommendedEngine('dall-e-3')
+      }
+    } catch (error) {
+      console.error('Failed to get engine recommendation:', error)
+    }
+  }
+  
   const handleGenerate = async () => {
     setLoading(true)
     setError(null)
     
     try {
+      // Build common options
+      const generationOptions = { 
+        tone, 
+        goal, 
+        additionalNotes, 
+        engine: selectedEngine 
+      }
+      
       // For reels, use two-stage generation
       if (contentType === 'reel') {
         const res = await fetch('/api/content/draft-reel', {
@@ -223,7 +270,7 @@ export function ContentCreationModal({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             painPointId: painPoint.id,
-            options: { tone, goal, additionalNotes }
+            options: generationOptions
           })
         })
         
@@ -238,14 +285,14 @@ export function ContentCreationModal({
         setQualityScore(data.qualityScore)
         setReelStage('editing')
       } else {
-        // For other content types, use single-stage generation
+        // For other content types, use unified generation
         const res = await fetch('/api/content/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             painPointId: painPoint.id,
             contentType,
-            options: { tone, goal, additionalNotes }
+            options: generationOptions
           })
         })
         
@@ -255,7 +302,14 @@ export function ContentCreationModal({
         }
         
         const data = await res.json()
-        setGeneratedContent(data.draft)
+        
+        // Check if this is async video generation
+        if (data.jobId && needsVideoEngine) {
+          setVideoJobId(data.jobId)
+          setShowVideoModal(true)
+        } else {
+          setGeneratedContent(data.draft)
+        }
       }
     } catch (error: any) {
       setError(error.message)
@@ -430,6 +484,29 @@ export function ContentCreationModal({
       scheduleAutoSave()
     }
     setEditMode(!editMode)
+  }
+  
+  const handleVideoComplete = (videoUrl: string) => {
+    setVideoUrl(videoUrl)
+    setShowVideoModal(false)
+    // Fetch the completed content draft
+    if (draftId) {
+      // Reload the draft to get the video URL
+      fetch(`/api/content/drafts/${draftId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.draft) {
+            setGeneratedContent(data.draft)
+          }
+        })
+        .catch(err => console.error('Failed to reload draft:', err))
+    }
+  }
+  
+  const handleVideoError = (error: string) => {
+    setError(error)
+    setShowVideoModal(false)
+    setVideoJobId(null)
   }
   
   const getStepLabel = (step: string) => {
@@ -643,6 +720,17 @@ export function ContentCreationModal({
                   </div>
                 </RadioGroup>
               </div>
+              
+              {/* Engine Selection - Show for content types that need it */}
+              {(needsImageEngine || needsVideoEngine || needsOptionalImageEngine) && (
+                <EngineSelector
+                  contentType={needsVideoEngine ? 'video' : 'image'}
+                  selectedEngine={selectedEngine}
+                  recommendedEngine={recommendedEngine}
+                  onEngineChange={(engine) => setSelectedEngine(engine)}
+                  showRecommendation={true}
+                />
+              )}
               
               {/* Additional Notes */}
               <div>
@@ -978,6 +1066,18 @@ export function ContentCreationModal({
         )}
       </div>
       </DialogContent>
+      
+      {/* Video Generation Modal */}
+      {videoJobId && showVideoModal && (
+        <VideoGenerationModal
+          open={showVideoModal}
+          jobId={videoJobId}
+          estimatedTime={90} // Default 90 seconds, could be based on engine
+          onComplete={handleVideoComplete}
+          onError={handleVideoError}
+          onClose={() => setShowVideoModal(false)}
+        />
+      )}
     </Dialog>
   )
 }
