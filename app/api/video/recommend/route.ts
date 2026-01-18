@@ -4,7 +4,7 @@ import OpenAI from 'openai'
 
 interface VideoRecommendation {
   recommended_type: 'text_only' | 'talking_head'
-  recommended_engine: 'remotion' | 'creatomate' | 'd-id' | 'heygen'
+  recommended_engine: 'pika' | 'remotion' | 'creatomate' | 'd-id' | 'heygen'
   text_only_score: number
   talking_head_score: number
   reasoning: string
@@ -87,9 +87,9 @@ Available formats:
 1. TEXT-ONLY (text overlays + animations + background footage)
    - Best for: POV content, memes, quick tips, humorous/viral content, short punchy messages
    - Strengths: Fast production, high engagement, works for scrollers, trendy
-   - Ideal length: 7-20 seconds
-   - Cost: $0.10-0.20 per video
-   - Engines: Remotion (custom), Creatomate (templates)
+   - Ideal length: 7-60 seconds
+   - Cost: $0.05-0.20 per video
+   - Engines: Pika (AI-generated, reactive short-form - DEFAULT for short/viral), Remotion (custom), Creatomate (templates)
 
 2. TALKING HEAD (avatar with lip-sync voice)
    - Best for: Educational content, storytelling, building trust, longer explanations, personal connection
@@ -98,17 +98,19 @@ Available formats:
    - Cost: $0.30-1.00 per video
    - Engines: D-ID (budget), HeyGen (premium)
 
+**Pika is the DEFAULT engine for reactive, short-form, TikTok/Reels-style content. Use it for quick, punchy, viral content.**
+
 Analyze based on:
-- content_type: reel/meme = lean text-only, deep_post/newsletter = lean talking head
-- tone: humorous/controversial/viral → text-only, empathetic/educational → talking head
-- goal: viral/engagement → text-only, education/trust → talking head
-- body length: <200 chars → text-only, >300 chars → talking head
-- sentiment: frustrated/relatable → text-only, seeking_help → talking head
+- content_type: reel/meme = lean text-only (use Pika), deep_post/newsletter = lean talking head
+- tone: humorous/controversial/viral → text-only (Pika), empathetic/educational → talking head
+- goal: viral/engagement → text-only (Pika), education/trust → talking head
+- body length: <200 chars → text-only (Pika), >300 chars → talking head
+- sentiment: frustrated/relatable → text-only (Pika), seeking_help → talking head
 
 Return ONLY valid JSON (no markdown):
 {
   "recommended_type": "text_only" or "talking_head",
-  "recommended_engine": "remotion" or "creatomate" or "d-id" or "heygen",
+  "recommended_engine": "pika" or "remotion" or "creatomate" or "d-id" or "heygen",
   "text_only_score": 0-100,
   "talking_head_score": 0-100,
   "reasoning": "2-3 sentence clear explanation why this format works best",
@@ -145,7 +147,7 @@ Recommend the best video format and engine with scores and reasoning.`
   // Validate and add timestamp
   return {
     recommended_type: result.recommended_type || 'text_only',
-    recommended_engine: result.recommended_engine || 'remotion',
+    recommended_engine: result.recommended_engine || 'pika',
     text_only_score: result.text_only_score || 50,
     talking_head_score: result.talking_head_score || 50,
     reasoning: result.reasoning || 'Analysis complete',
