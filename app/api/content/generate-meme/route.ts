@@ -3,16 +3,16 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 
-// Image format for meme storage (SVG for placeholder, PNG/JPG for production APIs)
-const MEME_IMAGE_FORMAT = 'svg'
-const MEME_CONTENT_TYPE = 'image/svg+xml'
+// Image format for meme storage (PNG for DALL-E 3 images)
+const MEME_IMAGE_FORMAT = 'png'
+const MEME_CONTENT_TYPE = 'image/png'
 
 /**
  * POST /api/content/generate-meme
  * 
  * Generate a meme with:
  * 1. OpenAI generates concept (hook, top_text, bottom_text, cta)
- * 2. Google AI Gemini generates image
+ * 2. DALL-E 3 generates image
  * 3. Save to Supabase Storage
  * 4. Store metadata in meme_images table
  */
@@ -29,6 +29,14 @@ export async function POST(request: Request) {
     // Validate API keys
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
+    }
+    
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'Supabase service role key not configured' }, { status: 500 })
+    }
+    
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      return NextResponse.json({ error: 'Supabase URL not configured' }, { status: 500 })
     }
     
     // Get pain point with agent access check
@@ -88,23 +96,34 @@ export async function POST(request: Request) {
       throw new Error('Failed to create content draft')
     }
     
-    // Step 3: Generate image with Google AI
-    console.log('Generating meme image with Google AI...')
+    // Step 3: Generate image with DALL-E 3
+    console.log('Generating meme image with DALL-E 3...')
     const imageData = await generateMemeImage({
       concept: memeConcept,
       options
     })
     
+    console.log('Image generated successfully, uploading to storage...')
+    
     // Step 4: Upload to Supabase Storage
     const timestamp = Date.now()
-    const storagePath = `${agentId}/${contentDraft.id}/${timestamp}.${MEME_IMAGE_FORMAT}`
+    const randomId = Math.random().toString(36).substring(7)
+    const storagePath = `${user.id}/memes/${timestamp}-${randomId}.${MEME_IMAGE_FORMAT}`
     
-    console.log('Uploading image to Supabase Storage...')
-    const { data: storageData, error: storageError } = await supabase.storage
+    console.log('Uploading image to Supabase Storage at:', storagePath)
+    
+    // Use service role for storage operations
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    
+    const { data: storageData, error: storageError } = await supabaseAdmin.storage
       .from('meme-images')
-      .upload(storagePath, Buffer.from(imageData, 'base64'), {
+      .upload(storagePath, imageData.imageBuffer, {
         contentType: MEME_CONTENT_TYPE,
-        cacheControl: '3600'
+        cacheControl: '3600',
+        upsert: false
       })
     
     if (storageError) {
@@ -112,12 +131,17 @@ export async function POST(request: Request) {
       throw new Error(`Failed to upload image: ${storageError.message}`)
     }
     
+    console.log('Image uploaded successfully to storage')
+    
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = supabaseAdmin.storage
       .from('meme-images')
       .getPublicUrl(storagePath)
     
+    console.log('Public URL obtained:', publicUrl)
+    
     // Step 5: Store metadata in meme_images table
+    console.log('Saving meme image metadata to database...')
     const { data: memeImage, error: memeError } = await supabase
       .from('meme_images')
       .insert({
@@ -134,9 +158,8 @@ export async function POST(request: Request) {
         refinement_prompt: null,
         raw_image_data: {
           generated_at: new Date().toISOString(),
-          model: 'placeholder-svg',
-          concept: memeConcept,
-          note: 'Using placeholder image generation. Integrate Imagen API or DALL-E for production.'
+          model: imageData.model,
+          concept: memeConcept
         }
       })
       .select()
@@ -147,10 +170,30 @@ export async function POST(request: Request) {
       throw new Error('Failed to save meme image metadata')
     }
     
+    console.log('Meme image metadata saved successfully, ID:', memeImage.id)
+    
+    // Step 6: Link meme image to content draft
+    console.log('Linking meme image to content draft...')
+    const { error: updateError } = await supabase
+      .from('content_drafts')
+      .update({ meme_image_id: memeImage.id })
+      .eq('id', contentDraft.id)
+    
+    if (updateError) {
+      console.error('Error linking meme to content draft:', updateError)
+      // Don't throw here - image was created successfully
+      console.warn('Meme image created but not linked to draft')
+    } else {
+      console.log('Successfully linked meme image to content draft')
+    }
+    
     return NextResponse.json({
       success: true,
       memeImage,
-      contentDraft
+      contentDraft: {
+        ...contentDraft,
+        meme_image_id: memeImage.id
+      }
     })
   } catch (error: any) {
     console.error('Meme generation error:', error)
@@ -226,12 +269,18 @@ Make it relatable, funny, and shareable. The image should be eye-catching and wo
 }
 
 /**
- * Generate meme image using Google AI Gemini
- * Note: This is currently a PLACEHOLDER implementation
- * For production, integrate Imagen API, DALL-E, or similar service
+ * Generate meme image using OpenAI DALL-E 3
  */
-async function generateMemeImage({ concept, options }: any): Promise<string> {
-  // Construct detailed image prompt for logging
+async function generateMemeImage({ concept, options }: any): Promise<{ imageBuffer: Buffer; model: string }> {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured')
+  }
+  
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  
+  // Construct detailed image prompt
+  // Note: DALL-E 3's text rendering is not always perfect, but we include it in the prompt
+  // A future enhancement could overlay text programmatically for more reliable results
   const imagePrompt = `Create a ${concept.meme_format !== 'Custom' ? concept.meme_format + ' style' : ''} meme image.
 
 Visual Description: ${concept.image_description}
@@ -240,98 +289,52 @@ Text to include:
 - Top: "${concept.top_text}"
 - Bottom: "${concept.bottom_text}"
 
-Style: Modern meme aesthetic, bold sans-serif font (Impact or similar), white text with black stroke, high contrast, social media optimized (1080x1080 square format).`
+Style: Modern meme aesthetic, bold sans-serif font (Impact or similar), white text with black stroke, high contrast, social media optimized. Square format (1024x1024).`
 
-  console.log('Image generation prompt:', imagePrompt)
-  
-  // PLACEHOLDER: Generate a simple text-based meme image
-  // In production, replace this with actual Imagen API, DALL-E, or similar
-  console.warn('Using placeholder image generation. For production, integrate Imagen API or DALL-E.')
+  console.log('DALL-E 3 image generation prompt:', imagePrompt)
   
   try {
-    // Create a simple SVG-based meme image as placeholder
-    const width = 1080
-    const height = 1080
+    const imageResponse = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: imagePrompt,
+      n: 1,
+      size: '1024x1024',
+      quality: 'standard',
+      response_format: 'b64_json'
+    })
     
-    // Generate a simple gradient background based on meme format
-    const colors = getColorScheme(concept.meme_format || 'Custom')
+    if (!imageResponse.data || !imageResponse.data[0]) {
+      throw new Error('No image data returned from DALL-E 3')
+    }
     
-    const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:${colors.start};stop-opacity:1" />
-          <stop offset="100%" style="stop-color:${colors.end};stop-opacity:1" />
-        </linearGradient>
-      </defs>
-      <rect width="${width}" height="${height}" fill="url(#grad)"/>
-      
-      <!-- Top Text -->
-      <text x="${width/2}" y="150" 
-            font-family="Impact, Arial Black, sans-serif" 
-            font-size="72" 
-            font-weight="bold"
-            fill="white" 
-            stroke="black" 
-            stroke-width="3"
-            text-anchor="middle"
-            style="text-transform: uppercase;">
-        ${escapeXml(concept.top_text)}
-      </text>
-      
-      <!-- Bottom Text -->
-      <text x="${width/2}" y="${height - 100}" 
-            font-family="Impact, Arial Black, sans-serif" 
-            font-size="72" 
-            font-weight="bold"
-            fill="white" 
-            stroke="black" 
-            stroke-width="3"
-            text-anchor="middle"
-            style="text-transform: uppercase;">
-        ${escapeXml(concept.bottom_text)}
-      </text>
-      
-      <!-- Watermark -->
-      <text x="${width/2}" y="${height/2}" 
-            font-family="Arial, sans-serif" 
-            font-size="24" 
-            fill="rgba(255,255,255,0.3)"
-            text-anchor="middle">
-        Placeholder Meme - Integrate Imagen API
-      </text>
-    </svg>`
+    const b64Image = imageResponse.data[0].b64_json
+    if (!b64Image) {
+      throw new Error('No base64 image data in DALL-E 3 response')
+    }
     
-    // Convert SVG to base64
-    const base64 = Buffer.from(svg).toString('base64')
-    return base64
+    console.log('DALL-E 3 image generated successfully')
     
+    const imageBuffer = Buffer.from(b64Image, 'base64')
+    
+    return {
+      imageBuffer,
+      model: 'dall-e-3'
+    }
   } catch (error: any) {
-    console.error('Placeholder image generation error:', error)
-    throw new Error(`Image generation failed: ${error.message}`)
+    console.error('DALL-E 3 image generation error:', error)
+    
+    // Provide specific error messages
+    if (error.code === 'rate_limit_exceeded') {
+      throw new Error('DALL-E 3 rate limit exceeded. Please try again later.')
+    }
+    if (error.code === 'insufficient_quota') {
+      throw new Error('OpenAI quota exceeded. Please check your account.')
+    }
+    if (error.status === 400) {
+      throw new Error(`DALL-E 3 rejected the prompt: ${error.message}`)
+    }
+    
+    throw new Error(`Failed to generate image with DALL-E 3: ${error.message}`)
   }
 }
 
-/**
- * Get color scheme based on meme format
- */
-function getColorScheme(format: string): { start: string; end: string } {
-  const schemes: Record<string, { start: string; end: string }> = {
-    'Drake': { start: '#1a1a2e', end: '#16213e' },
-    'Distracted Boyfriend': { start: '#e94560', end: '#0f3460' },
-    'Custom': { start: '#4a148c', end: '#6a1b9a' },
-    'default': { start: '#2c3e50', end: '#3498db' }
-  }
-  return schemes[format] || schemes['default']
-}
-
-/**
- * Escape XML special characters
- */
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
-}
