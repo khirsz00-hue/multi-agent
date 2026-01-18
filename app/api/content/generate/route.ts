@@ -44,15 +44,38 @@ interface BrandSettings {
   content_guidelines?: string
 }
 
+interface User {
+  id: string
+  email?: string
+}
+
+interface SupabaseClient {
+  auth: {
+    getUser: () => Promise<{ data: { user: User | null } }>
+  }
+  from: (table: string) => any
+  storage: any
+}
+
+interface VisualSuggestions {
+  format?: string
+  music_vibe?: string
+  meme_format?: string
+  image_description?: string
+  formatting?: string
+  engagement_type?: string
+  key_moments?: string[]
+}
+
 interface GenerationContext {
-  supabase: any
+  supabase: SupabaseClient
   painPoint: PainPoint
   contentType: string
   options?: ContentOptions
   brandSettings?: BrandSettings
   agentId: string
   painPointId: string
-  user: any
+  user: User
 }
 
 interface StaticGenerationContext extends GenerationContext {
@@ -78,13 +101,35 @@ interface GeneratedContent {
   body?: string
   cta?: string
   hashtags?: string[]
-  visual_suggestions?: any
+  visual_suggestions?: VisualSuggestions
 }
 
 interface ImageGenerationResult {
   imageBuffer: Buffer
   model: string
   engine: string
+}
+
+interface GenerationResponse {
+  type: 'static' | 'video'
+  status: 'completed' | 'processing'
+  engine?: string
+  image_url?: string
+  video_url?: string
+  task_id?: string
+  error?: string
+}
+
+interface StaticGenerationResponse {
+  success: boolean
+  draft: any
+  generation: GenerationResponse
+}
+
+interface VideoGenerationResponse {
+  success: boolean
+  draft: any
+  generation: GenerationResponse
 }
 
 export async function POST(request: Request) {
@@ -214,7 +259,7 @@ async function handleStaticGeneration({
   painPointId,
   imageEngine,
   user
-}: StaticGenerationContext) {
+}: StaticGenerationContext): Promise<StaticGenerationResponse> {
   const isMeme = contentType === 'meme'
   
   console.log(`[Static Generation] Generating ${contentType}${isMeme ? ` with ${imageEngine} engine` : ''}`)
@@ -260,7 +305,7 @@ async function handleStaticGeneration({
   
   if (draftError) throw draftError
   
-  const response: any = {
+  const response: StaticGenerationResponse = {
     success: true,
     draft,
     generation: {
@@ -363,7 +408,7 @@ async function handleVideoGeneration({
   painPointId,
   videoEngine,
   user
-}: VideoGenerationContext) {
+}: VideoGenerationContext): Promise<VideoGenerationResponse> {
   console.log(`[Video Generation] Generating ${contentType} scenario with ${videoEngine} engine`)
   
   // Generate draft scenario with OpenAI
