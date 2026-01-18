@@ -50,3 +50,28 @@ USING (
   bucket_id = 'meme-images' AND
   (storage.foldername(name))[1] = auth.uid()::text
 );
+
+-- Storage Bucket Policies for 'videos' bucket
+-- Create the bucket first in Supabase Dashboard → Storage
+-- Or run: INSERT INTO storage.buckets (id, name, public) VALUES ('videos', 'videos', true);
+
+-- Allow authenticated users to upload videos to their own folder
+CREATE POLICY "Authenticated users can upload videos"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'videos' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- Allow public read access to videos (since they'll be displayed on social media)
+CREATE POLICY "Public can view videos"
+ON storage.objects FOR SELECT TO public
+USING (bucket_id = 'videos');
+
+-- Allow users to delete their own videos
+CREATE POLICY "Users can delete their own videos"
+ON storage.objects FOR DELETE TO authenticated
+USING (
+  bucket_id = 'videos' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
