@@ -31,6 +31,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
     }
     
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'Supabase service role key not configured' }, { status: 500 })
+    }
+    
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      return NextResponse.json({ error: 'Supabase URL not configured' }, { status: 500 })
+    }
+    
     // Get pain point with agent access check
     const { data: painPoint, error: painPointError } = await supabase
       .from('audience_insights')
