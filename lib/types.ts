@@ -116,6 +116,10 @@ export interface ContentDraft {
   video_eta?: string; // Estimated completion time
   video_url?: string; // Final video storage URL
   generation_cost?: number; // Cost tracking in decimal
+  generation_engine?: string; // Backwards compatibility
+  // Meme-specific fields
+  meme_top_text?: string; // Top text for meme content
+  meme_bottom_text?: string; // Bottom text for meme content
   created_at: string;
   updated_at: string;
 }
