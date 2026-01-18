@@ -94,6 +94,7 @@ ALTER TABLE content_drafts
   ADD COLUMN IF NOT EXISTS generation_cost DECIMAL(10, 4) DEFAULT 0.00;
 
 -- Note: video_engine and video_url already exist from 007_video_recommendation.sql
+-- video_engine exists as TEXT type from migration 007
 
 -- Add indexes for new columns
 CREATE INDEX IF NOT EXISTS idx_content_drafts_image_engine ON content_drafts(image_engine);
