@@ -93,9 +93,11 @@ export async function POST(request: Request) {
       .single()
 
     if (taskError) {
-      console.error('Failed to save video task:', taskError)
+      console.error('Failed to save video task to database:', taskError)
       // Try to cancel the Pika task since we couldn't save it
-      await pikaService.cancelTask(taskResponse.taskId).catch(console.error)
+      await pikaService.cancelTask(taskResponse.taskId).catch((cancelError) => {
+        console.error('Failed to cancel Pika task after database error:', cancelError)
+      })
       throw taskError
     }
 

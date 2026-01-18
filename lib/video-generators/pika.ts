@@ -5,6 +5,9 @@
  * Optimized for TikTok/Instagram Reels style content.
  */
 
+// Constants for polling
+const EXPONENTIAL_BACKOFF_MULTIPLIER = 1.5
+
 export interface PikaVideoConfig {
   prompt: string
   duration?: number // 15-60 seconds (default: 30)
@@ -169,7 +172,7 @@ export class PikaService {
         await this.sleep(delay)
 
         // Exponential backoff, capped at maxDelay
-        delay = Math.min(delay * 1.5, maxDelay)
+        delay = Math.min(delay * EXPONENTIAL_BACKOFF_MULTIPLIER, maxDelay)
         attempt++
       } catch (error: any) {
         console.error(`Poll attempt ${attempt + 1} failed:`, error)
@@ -181,7 +184,7 @@ export class PikaService {
 
         // Otherwise, retry with backoff
         await this.sleep(delay)
-        delay = Math.min(delay * 1.5, maxDelay)
+        delay = Math.min(delay * EXPONENTIAL_BACKOFF_MULTIPLIER, maxDelay)
         attempt++
       }
     }
