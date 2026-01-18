@@ -32,7 +32,8 @@ The agents work in a coordinated flow:
 - **Multi-Agent Dashboard**: Unified view of all agents working together
 - **Email Notifications**: Daily reminders with content ready to publish
 - **Multi-LLM Provider**: Support for OpenAI, Anthropic (Claude), Google (Gemini), and Ollama
-- **Meme Generation**: AI-powered meme creation with iterative refinement (see [docs/MEME_GENERATION.md](docs/MEME_GENERATION.md))
+- **Meme Generation**: AI-powered meme creation with iterative refinement (see [MEME_GENERATION.md](MEME_GENERATION.md))
+  - **NEW**: Simplified DALL-E meme generation API at `/api/memy/generuj` (see [docs/MEME_GENERATION_API.md](docs/MEME_GENERATION_API.md))
 - **File Upload & Processing**: Upload documents and leverage RAG (Retrieval Augmented Generation)
 - **Intelligent Chat**: Conversational interface with context-aware responses
 - **Vector Search**: Semantic search using pgvector for relevant information retrieval
