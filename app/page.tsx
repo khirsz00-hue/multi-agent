@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
-<<<<<<< HEAD
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -109,17 +108,4 @@ export default function Home() {
       </footer>
     </div>
   )
-=======
-export default async function Home() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  // If user is logged in, redirect to spaces dashboard
-  if (user) {
-    redirect('/spaces')
-  }
-  
-  // If not logged in, redirect to login
-  redirect('/login')
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
 }
