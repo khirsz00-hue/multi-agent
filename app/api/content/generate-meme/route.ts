@@ -279,6 +279,8 @@ async function generateMemeImage({ concept, options }: any): Promise<{ imageBuff
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   
   // Construct detailed image prompt
+  // Note: DALL-E 3's text rendering is not always perfect, but we include it in the prompt
+  // A future enhancement could overlay text programmatically for more reliable results
   const imagePrompt = `Create a ${concept.meme_format !== 'Custom' ? concept.meme_format + ' style' : ''} meme image.
 
 Visual Description: ${concept.image_description}
@@ -287,7 +289,7 @@ Text to include:
 - Top: "${concept.top_text}"
 - Bottom: "${concept.bottom_text}"
 
-Style: Modern meme aesthetic, bold sans-serif font (Impact or similar), white text with black stroke, high contrast, social media optimized (1080x1080 square format).`
+Style: Modern meme aesthetic, bold sans-serif font (Impact or similar), white text with black stroke, high contrast, social media optimized. Square format (1024x1024).`
 
   console.log('DALL-E 3 image generation prompt:', imagePrompt)
   
