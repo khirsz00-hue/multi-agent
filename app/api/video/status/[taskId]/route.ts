@@ -3,10 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(
   request: Request,
-  { params }: { params: { taskId: string } }
+  context: { params: Promise<{ taskId: string }> }
 ) {
   try {
-    const { taskId } = params
+    const { taskId } = await context.params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
