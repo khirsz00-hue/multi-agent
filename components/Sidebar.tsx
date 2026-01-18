@@ -79,7 +79,7 @@ export default function Sidebar({ user, className }: SidebarProps) {
     <div className={cn("flex flex-col h-full bg-white border-r", className)}>
       {/* Logo */}
       <div className="p-4 border-b">
-        <Link href="/" className="flex items-center space-x-2">
+        <Link href="/spaces" className="flex items-center space-x-2">
           <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg" />
           <span className="font-bold text-lg">Multi-Agent</span>
         </Link>
@@ -158,7 +158,7 @@ export default function Sidebar({ user, className }: SidebarProps) {
             </div>
           </div>
           <div className="flex gap-2">
-            <Link href="/settings" className="flex-1">
+            <Link href="/settings/brand" className="flex-1">
               <Button variant="ghost" size="sm" className="w-full justify-start">
                 <User className="h-4 w-4 mr-2" />
                 Settings
