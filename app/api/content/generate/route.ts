@@ -21,6 +21,11 @@ interface ContentOptions {
   additionalNotes?: string
 }
 
+/**
+ * PainPoint structure as returned from Supabase query with joined relations
+ * Query: .select('*, agents!inner(*, spaces!inner(user_id))')
+ * This includes both the direct agent_id field and the joined agents object
+ */
 interface PainPoint {
   id: string
   pain_point: string
@@ -450,7 +455,7 @@ async function handleVideoGeneration({
       type: 'video',
       engine: videoEngine,
       status: 'processing',
-      task_id: draft.id // Use draft ID as placeholder task ID
+      task_id: `draft-${draft.id}` // Prefix to indicate this is a draft ID, not a video task ID
     }
   }
 }
@@ -592,28 +597,30 @@ async function generateMemeImage({
 }): Promise<ImageGenerationResult> {
   console.log(`[Image Generation] Attempting with engine: ${engine}`)
   
-  // Currently only DALL-E is implemented
-  if (engine === 'dalle' || engine === DEFAULT_IMAGE_ENGINE) {
+  // Engine availability registry
+  const engineAvailable: Record<ImageEngine, boolean> = {
+    'dalle': true,
+    'google_ai': false,
+    'replicate': false
+  }
+  
+  // If requested engine is available, use it
+  if (engineAvailable[engine]) {
+    if (engine === 'dalle') {
+      return await generateWithDallE(concept, options)
+    }
+    // Add future engine implementations here
+  }
+  
+  // Engine not implemented, fallback to DALL-E
+  if (!engineAvailable[engine]) {
+    console.log(`[Image Generation] Engine ${engine} not yet implemented, falling back to DALL-E`)
     return await generateWithDallE(concept, options)
   }
   
-  // For other engines, attempt and fallback to DALL-E
-  console.log(`[Image Generation] Engine ${engine} not yet implemented, falling back to DALL-E`)
-  
-  try {
-    // Placeholder for future engine implementations
-    if (engine === 'google_ai') {
-      throw new Error('Google AI not yet implemented')
-    }
-    if (engine === 'replicate') {
-      throw new Error('Replicate not yet implemented')
-    }
-    
-    throw new Error(`Unknown engine: ${engine}`)
-  } catch (error: any) {
-    console.log(`[Image Generation] Fallback to DALL-E due to: ${error.message}`)
-    return await generateWithDallE(concept, options)
-  }
+  // Fallback for any other case
+  console.log(`[Image Generation] Unexpected engine state for ${engine}, falling back to DALL-E`)
+  return await generateWithDallE(concept, options)
 }
 
 /**
