@@ -211,7 +211,7 @@ export default function CalendarCell({
                 {draft.content_type.replace('_', ' ')}
               </span>
             </div>
-            <div className="text-xs text-gray-600 line-clamp-3">
+            <div className="text-xs text-gray-600 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
               {draft.hook || draft.body || draft.content || 'No content preview'}
             </div>
             {draft.audience_insights?.pain_point && (

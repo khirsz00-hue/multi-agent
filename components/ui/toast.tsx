@@ -20,20 +20,38 @@ const ToastContext = React.createContext<ToastContextType | undefined>(undefined
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<Toast[]>([])
+  const timeoutRefs = React.useRef<Map<string, NodeJS.Timeout>>(new Map())
 
   const showToast = React.useCallback((message: string, type: ToastType = 'info') => {
-    const id = Math.random().toString(36).substring(7)
+    const id = crypto.randomUUID()
     setToasts(prev => [...prev, { id, message, type }])
     
     // Auto-remove after 5 seconds
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
+      timeoutRefs.current.delete(id)
     }, 5000)
+    
+    timeoutRefs.current.set(id, timeout)
   }, [])
 
-  const removeToast = (id: string) => {
+  const removeToast = React.useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id))
-  }
+    const timeout = timeoutRefs.current.get(id)
+    if (timeout) {
+      clearTimeout(timeout)
+      timeoutRefs.current.delete(id)
+    }
+  }, [])
+
+  // Cleanup on unmount
+  React.useEffect(() => {
+    const timeouts = timeoutRefs.current
+    return () => {
+      timeouts.forEach(timeout => clearTimeout(timeout))
+      timeouts.clear()
+    }
+  }, [])
 
   return (
     <ToastContext.Provider value={{ showToast }}>

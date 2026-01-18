@@ -25,7 +25,7 @@ interface DashboardSidebarProps {
 interface UpcomingContent {
   id: string
   title: string
-  publish_date: string
+  scheduled_date: string
   status: string
 }
 
@@ -163,7 +163,7 @@ export default function DashboardSidebar({ spaceId }: DashboardSidebarProps) {
                     </span>
                   </div>
                   <span className="text-gray-500 text-[10px] ml-2 flex-shrink-0">
-                    {new Date(item.publish_date).toLocaleTimeString(undefined, {
+                    {new Date(item.scheduled_date).toLocaleTimeString(undefined, {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
