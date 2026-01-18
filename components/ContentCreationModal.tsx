@@ -728,6 +728,9 @@ export default function ContentCreationModal({ open, onClose, painPoint }: Conte
           console.log('Video ready:', videoUrl)
           // Optionally update the draft with the video URL
         }}
+        onRetry={(newTaskId) => {
+          setVideoTaskId(newTaskId)
+        }}
       />
     </Dialog>
   )

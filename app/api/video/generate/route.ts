@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export async function POST(request: Request) {
   try {
@@ -74,7 +75,10 @@ export async function POST(request: Request) {
     // In a real implementation, you would trigger the actual video generation here
     // For now, we'll simulate it by updating the task status
     // This would typically be handled by a background worker or queue
-    simulateVideoGeneration(task.id, supabase)
+    // Fire and forget intentionally - background processing
+    simulateVideoGeneration(task.id, supabase).catch(err => {
+      console.error('Background video generation error:', err)
+    })
 
     return NextResponse.json({ 
       success: true, 
@@ -89,7 +93,7 @@ export async function POST(request: Request) {
 
 // Simulate video generation progress
 // In production, this would be replaced with actual video generation service integration
-async function simulateVideoGeneration(taskId: string, supabase: any) {
+async function simulateVideoGeneration(taskId: string, supabase: SupabaseClient) {
   // Simulate processing stages
   const stages = [
     { progress: 10, time: 2000 },

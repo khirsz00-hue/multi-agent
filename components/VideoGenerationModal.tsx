@@ -19,6 +19,7 @@ interface VideoGenerationModalProps {
   taskId: string | null
   onVideoReady?: (videoUrl: string) => void
   draftId?: string
+  onRetry?: (newTaskId: string) => void
 }
 
 export default function VideoGenerationModal({
@@ -26,7 +27,8 @@ export default function VideoGenerationModal({
   onClose,
   taskId,
   onVideoReady,
-  draftId
+  draftId,
+  onRetry
 }: VideoGenerationModalProps) {
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
   const [autoCloseTimer, setAutoCloseTimer] = useState<NodeJS.Timeout | null>(null)
@@ -69,7 +71,11 @@ export default function VideoGenerationModal({
   }
 
   const handleRetry = async () => {
-    if (!draftId) return
+    if (!draftId) {
+      // If no draftId, just retry polling the current task
+      retry()
+      return
+    }
     
     try {
       // Re-initiate video generation
@@ -83,9 +89,10 @@ export default function VideoGenerationModal({
 
       const data = await response.json()
       
-      // The new taskId will be handled by the parent component
-      // For now, just retry polling the current task
-      retry()
+      // Notify parent component of new task ID
+      if (onRetry && data.taskId) {
+        onRetry(data.taskId)
+      }
     } catch (err: any) {
       console.error('Retry error:', err)
       alert(err.message || 'Failed to retry video generation')

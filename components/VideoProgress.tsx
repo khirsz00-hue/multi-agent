@@ -19,6 +19,21 @@ export default function VideoProgress({
   estimatedTime,
   errorMessage
 }: VideoProgressProps) {
+  const getEngineDisplayName = (engineName?: string): string => {
+    if (!engineName) return 'AI'
+    
+    const engineMap: Record<string, string> = {
+      'pika': 'Pika',
+      'runway': 'Runway',
+      'd-id': 'D-ID',
+      'heygen': 'HeyGen',
+      'remotion': 'Remotion',
+      'creatomate': 'Creatomate'
+    }
+    
+    return engineMap[engineName.toLowerCase()] || engineName
+  }
+  
   const getStatusIcon = () => {
     switch (status) {
       case 'queued':
@@ -39,7 +54,7 @@ export default function VideoProgress({
       case 'queued':
         return 'Your video is queued...'
       case 'processing':
-        const engineName = engine ? engine.charAt(0).toUpperCase() + engine.slice(1) : 'AI'
+        const engineName = getEngineDisplayName(engine)
         const timeMsg = estimatedTime 
           ? ` ${Math.floor(estimatedTime / 60)}:${String(estimatedTime % 60).padStart(2, '0')} remaining`
           : ''

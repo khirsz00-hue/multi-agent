@@ -75,6 +75,8 @@ export function useVideoPolling({
         setError(errorMsg)
         onError?.(errorMsg)
       }
+      
+      return data.task.status
     } catch (err: any) {
       if (!mountedRef.current) return
       
@@ -93,15 +95,29 @@ export function useVideoPolling({
     if (!taskId || !enabled) return
 
     // Initial fetch
-    fetchStatus()
-
-    // Only poll if task is not complete or failed
-    if (task?.status === 'completed' || task?.status === 'failed') {
-      return
+    const startPolling = async () => {
+      const status = await fetchStatus()
+      
+      // Only set up polling if task is not complete or failed
+      if (status === 'completed' || status === 'failed') {
+        return
+      }
+      
+      // Set up polling interval
+      intervalRef.current = setInterval(async () => {
+        const currentStatus = await fetchStatus()
+        
+        // Stop polling if task is complete or failed
+        if (currentStatus === 'completed' || currentStatus === 'failed') {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+            intervalRef.current = null
+          }
+        }
+      }, pollingInterval)
     }
-
-    // Set up polling
-    intervalRef.current = setInterval(fetchStatus, pollingInterval)
+    
+    startPolling()
 
     return () => {
       if (intervalRef.current) {
@@ -109,7 +125,7 @@ export function useVideoPolling({
         intervalRef.current = null
       }
     }
-  }, [taskId, enabled, pollingInterval, fetchStatus, task?.status])
+  }, [taskId, enabled, pollingInterval, fetchStatus])
 
   // Cleanup on unmount
   useEffect(() => {
