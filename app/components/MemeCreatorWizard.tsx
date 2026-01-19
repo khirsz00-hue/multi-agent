@@ -27,7 +27,8 @@ const AI_ENGINES = [
     cost: 0.04, 
     quality: 'Najlepsza', 
     speed: 'Średnia',
-    recommended: true 
+    recommended: true,
+    enabled: true
   },
   { 
     id: 'google-imagen', 
@@ -35,7 +36,8 @@ const AI_ENGINES = [
     cost: 0.02, 
     quality: 'Wysoka', 
     speed: 'Szybka',
-    recommended: false 
+    recommended: false,
+    enabled: false  // Not yet implemented
   },
   { 
     id: 'replicate', 
@@ -43,7 +45,8 @@ const AI_ENGINES = [
     cost: 0.01, 
     quality: 'Średnia', 
     speed: 'Szybka',
-    recommended: false 
+    recommended: false,
+    enabled: false  // Not yet implemented
   }
 ]
 
@@ -357,7 +360,7 @@ export function MemeCreatorWizard() {
           
           <RadioGroup value={selectedEngine} onValueChange={setSelectedEngine}>
             <div className="space-y-3">
-              {AI_ENGINES.map((engine) => (
+              {AI_ENGINES.filter(engine => engine.enabled).map((engine) => (
                 <div 
                   key={engine.id}
                   className="flex items-center space-x-3 border rounded-lg p-4"
