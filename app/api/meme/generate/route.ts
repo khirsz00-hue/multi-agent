@@ -90,14 +90,12 @@ Style: Clean, high quality meme format, bold Impact font white text with black o
 
 async function generateWithImagen(topText: string, bottomText: string, template: string): Promise<string> {
   // TODO: Implement Google Imagen
-  // For now, fallback to DALL-E
-  console.log('Google Imagen not yet implemented, using DALL-E')
-  return generateWithDALLE(topText, bottomText, template)
+  // For now, return error to user
+  throw new Error('Google Imagen is not yet implemented. Please select DALL-E 3.')
 }
 
 async function generateWithReplicate(topText: string, bottomText: string, template: string): Promise<string> {
   // TODO: Implement Replicate SDXL
-  // For now, fallback to DALL-E
-  console.log('Replicate not yet implemented, using DALL-E')
-  return generateWithDALLE(topText, bottomText, template)
+  // For now, return error to user
+  throw new Error('Replicate is not yet implemented. Please select DALL-E 3.')
 }

@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Card } from '@/components/ui/card'
 import { Loader2, Sparkles, Download, RefreshCw, Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { useToast } from '@/components/ui/toast'
 import Image from 'next/image'
 
 const MEME_TEMPLATES = [
@@ -47,6 +48,7 @@ const AI_ENGINES = [
 ]
 
 export function MemeCreatorWizard() {
+  const { showToast } = useToast()
   const [step, setStep] = useState<'input' | 'suggestion' | 'customize' | 'generate' | 'result'>('input')
   
   // Step 1: Input
@@ -77,13 +79,19 @@ export function MemeCreatorWizard() {
       })
       
       const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate suggestion')
+      }
+      
       setSuggestion(data.suggestion)
       setTopText(data.suggestion.top_text)
       setBottomText(data.suggestion.bottom_text)
       setSelectedTemplate(data.suggestion.template)
       setStep('suggestion')
-    } catch (error) {
-      alert('Błąd generowania sugestii')
+      showToast('Meme suggestion generated successfully!', 'success')
+    } catch (error: any) {
+      showToast(error.message || 'Error generating suggestion', 'error')
     } finally {
       setLoadingSuggestion(false)
     }
@@ -91,7 +99,7 @@ export function MemeCreatorWizard() {
   
   const handleRegenerate = async () => {
     if (!feedback.trim()) {
-      alert('Wpisz feedback przed regeneracją')
+      showToast('Please provide feedback before regenerating', 'error')
       return
     }
     
@@ -108,13 +116,19 @@ export function MemeCreatorWizard() {
       })
       
       const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to regenerate')
+      }
+      
       setSuggestion(data.suggestion)
       setTopText(data.suggestion.top_text)
       setBottomText(data.suggestion.bottom_text)
       setSelectedTemplate(data.suggestion.template)
       setFeedback('')
-    } catch (error) {
-      alert('Błąd regeneracji')
+      showToast('Meme regenerated based on your feedback!', 'success')
+    } catch (error: any) {
+      showToast(error.message || 'Error regenerating meme', 'error')
     } finally {
       setLoadingSuggestion(false)
     }
@@ -137,10 +151,16 @@ export function MemeCreatorWizard() {
       })
       
       const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate meme')
+      }
+      
       setGeneratedImageUrl(data.imageUrl)
       setStep('result')
-    } catch (error) {
-      alert('Błąd generowania obrazu')
+      showToast('Meme generated successfully!', 'success')
+    } catch (error: any) {
+      showToast(error.message || 'Error generating meme image', 'error')
       setStep('customize')
     } finally {
       setGenerating(false)

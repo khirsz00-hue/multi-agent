@@ -24,7 +24,7 @@ Return JSON:
 {
   "top_text": "SHORT TEXT FOR TOP (max 60 chars)",
   "bottom_text": "SHORT TEXT FOR BOTTOM (max 60 chars)",
-  "template": "drake" | "distracted_boyfriend" | "two_buttons" | "expanding_brain" | "disaster_girl" | "success_kid" | "is_this" | "change_my_mind",
+  "template": "drake" | "distracted_boyfriend" | "two_buttons" | "expanding_brain" | "is_this" | "change_my_mind",
   "reasoning": "Why this meme works for this insight",
   "humor_score": 0-100,
   "relatability_score": 0-100
