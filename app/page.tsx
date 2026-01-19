@@ -1,5 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { FolderOpen, Bot, Upload, MessageSquare } from 'lucide-react'
+import Link from 'next/link'
 
 export default function Home() {
   return (

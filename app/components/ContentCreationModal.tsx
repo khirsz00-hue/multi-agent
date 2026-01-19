@@ -831,6 +831,7 @@ export function ContentCreationModal({
                       {generatedContent.hashtags.join(' ')}
                     </p>
                   </div>
+                  
                 </div>
               )}
             </div>
@@ -838,6 +839,9 @@ export function ContentCreationModal({
           
           {/* Video Generation Progress */}
               
+              {/* Visual Suggestions */}
+              {generatedContent.visual_suggestions && (
+                <div>
           {/* Visual Suggestions */}
           {generatedContent.visual_suggestions && (
             <div>

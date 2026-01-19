@@ -106,6 +106,7 @@ export default function SpacesPage() {
         </div>
       </header>
 
+      <div className="p-6">
       <main className="container mx-auto px-4 py-8">
         {loading ? (
           <div className="text-center py-12">
