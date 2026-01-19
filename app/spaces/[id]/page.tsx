@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AgentBuilder } from '@/components/AgentBuilder'
 import { Space, Agent } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, Plus, Bot, Target } from 'lucide-react'
+import { ArrowLeft, Plus, Bot, Target, Settings } from 'lucide-react'
 
 export default function SpaceDetailPage() {
   const params = useParams()
@@ -150,6 +150,12 @@ export default function SpaceDetailPage() {
                   </Button>
                 </Link>
               )}
+              <Link href={`/spaces/${spaceId}/settings`}>
+                <Button variant="outline">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </Link>
               <Button onClick={() => setShowAgentBuilder(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Agent
