@@ -623,6 +623,7 @@ export function ContentCreationModal({
                   {currentRecommendation.hook_suggestion && (
                     <p className="text-sm text-blue-600 mt-2 italic">
                       💡 Suggested hook: &ldquo;{currentRecommendation.hook_suggestion}&rdquo;
+                      💡 Sugerowany haczyk: &quot;{currentRecommendation.hook_suggestion}&quot;
                     </p>
                   )}
                 </div>
@@ -762,11 +763,13 @@ export function ContentCreationModal({
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     {contentType === 'reel' ? 'Generating Draft Scenario...' : 'Generating Content...'}
+                    Generowanie treści...
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-2" />
                     {contentType === 'reel' ? 'Generate Draft Scenario' : 'Generate Content'}
+                    Generuj treść
                   </>
                 )}
               </Button>
@@ -852,88 +855,68 @@ export function ContentCreationModal({
                       placeholder="CTA text..."
                       className="w-full"
                     />
+              <div className="bg-green-50 border border-green-200 p-3 rounded">
+                <p className="text-sm font-medium text-green-900">
+                  ✅ Treść wygenerowana pomyślnie!
+                </p>
+              </div>
+              
+              {/* Hook */}
+              {generatedContent.hook && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                    🎬 Haczyk
+                  </Label>
+                  <div className="p-3 bg-gray-50 rounded border">
+                    <p className="text-sm text-gray-900">{generatedContent.hook}</p>
                   </div>
-                  
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                      #️⃣ Hashtags (space-separated)
-                    </Label>
-                    <Input
-                      value={editedHashtags}
-                      onChange={(e) => {
-                        setEditedHashtags(e.target.value)
-                        scheduleAutoSave()
-                      }}
-                      placeholder="#hashtag1 #hashtag2"
-                      className="w-full"
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* View Mode - Display Content */}
-                  {generatedContent.hook && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                        🎬 Hook
-                      </Label>
-                      <div className="p-3 bg-gray-50 rounded border">
-                        <p className="text-sm text-gray-900">{generatedContent.hook}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {generatedContent.body && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                        📝 Body
-                      </Label>
-                      <div className="p-3 bg-gray-50 rounded border max-h-64 overflow-y-auto">
-                        <p className="text-sm text-gray-900 whitespace-pre-wrap">
-                          {generatedContent.body}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {generatedContent.cta && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                        🎯 Call to Action
-                      </Label>
-                      <div className="p-3 bg-gray-50 rounded border">
-                        <p className="text-sm text-gray-900">{generatedContent.cta}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {generatedContent.hashtags?.length > 0 && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                        #️⃣ Hashtags
-                      </Label>
-                      <div className="p-3 bg-gray-50 rounded border">
-                        <p className="text-sm text-blue-600">
-                          {generatedContent.hashtags.join(' ')}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {generatedContent.visual_suggestions && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                        🎨 Visual Suggestions
-                      </Label>
-                      <div className="p-3 bg-gray-50 rounded border">
-                        <pre className="text-xs whitespace-pre-wrap text-gray-700 font-mono">
-                          {JSON.stringify(generatedContent.visual_suggestions, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-                </>
+                </div>
               )}
+              
+              {/* Body */}
+              {generatedContent.body && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                    📝 Treść
+                  </Label>
+                  <div className="p-3 bg-gray-50 rounded border max-h-64 overflow-y-auto">
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap">
+                      {generatedContent.body}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* CTA */}
+              {generatedContent.cta && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                    🎯 Wezwanie do działania
+                  </Label>
+                  <div className="p-3 bg-gray-50 rounded border">
+                    <p className="text-sm text-gray-900">{generatedContent.cta}</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Hashtags */}
+              {generatedContent.hashtags?.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                    #️⃣ Hasztagi
+                  </Label>
+                  <div className="p-3 bg-gray-50 rounded border">
+                    <p className="text-sm text-blue-600">
+                      {generatedContent.hashtags.join(' ')}
+                    </p>
+                  </div>
+                  
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Video Generation Progress */}
               
               {/* Meme Generator Section - Only for meme content type */}
               {contentType === 'meme' && generatedContent && (
@@ -948,6 +931,19 @@ export function ContentCreationModal({
                         <strong>U dołu:</strong> {generatedContent.meme_bottom_text || '(nie ustawione)'}
                       </p>
                     </div>
+              {/* Visual Suggestions */}
+              {generatedContent.visual_suggestions && (
+                <div>
+          {/* Visual Suggestions */}
+          {generatedContent.visual_suggestions && (
+            <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                    🎨 Sugestie wizualne
+                  </Label>
+                  <div className="p-3 bg-gray-50 rounded border">
+                    <pre className="text-xs whitespace-pre-wrap text-gray-700 font-mono">
+                      {JSON.stringify(generatedContent.visual_suggestions, null, 2)}
+                    </pre>
                   </div>
                   
                   <GeneratorMemow
@@ -1001,6 +997,7 @@ export function ContentCreationModal({
                     <>
                       <Copy className="h-4 w-4 mr-2" />
                       Copy
+                      Kopiuj do schowka
                     </>
                   )}
                 </Button>
@@ -1012,6 +1009,7 @@ export function ContentCreationModal({
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save
+                  Gotowe
                 </Button>
                 
                 {currentStep < totalSteps - 1 ? (
