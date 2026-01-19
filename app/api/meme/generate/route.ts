@@ -81,7 +81,11 @@ Style: Clean, high quality meme format, bold Impact font white text with black o
     quality: 'standard'
   })
   
-  return response.data[0].url || ''
+  if (!response.data || !response.data[0] || !response.data[0].url) {
+    throw new Error('Failed to generate image with DALL-E 3')
+  }
+  
+  return response.data[0].url
 }
 
 async function generateWithImagen(topText: string, bottomText: string, template: string): Promise<string> {
