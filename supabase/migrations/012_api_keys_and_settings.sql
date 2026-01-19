@@ -2,12 +2,14 @@
 -- Space Settings & API Keys
 -- ============================================
 
--- Create api_keys table with encryption
+-- Create api_keys table with encryption support
+-- NOTE: API keys MUST be encrypted at the application layer before storage
+-- Consider using crypto libraries or services like AWS KMS/Supabase Vault
 CREATE TABLE IF NOT EXISTS api_keys (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   space_id UUID NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
   service TEXT NOT NULL, -- 'openai', 'dall-e', 'd-id', 'heygen', etc
-  api_key TEXT NOT NULL, -- Encrypted
+  api_key TEXT NOT NULL, -- MUST be encrypted before storage!
   metadata JSONB DEFAULT '{}', -- Additional config per service
   is_active BOOLEAN DEFAULT true,
   last_tested_at TIMESTAMP WITH TIME ZONE,

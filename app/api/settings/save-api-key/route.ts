@@ -24,12 +24,14 @@ export async function POST(request: Request) {
     }
 
     // Upsert API key
+    // NOTE: In production, API keys should be encrypted before storage.
+    // Consider using crypto.encrypt() or a service like AWS KMS/Supabase Vault
     const { error } = await supabase
       .from('api_keys')
       .upsert({
         space_id: spaceId,
         service,
-        api_key: apiKey, // Note: In production, encrypt this!
+        api_key: apiKey, // TODO: Encrypt this in production!
         is_active: true,
         updated_at: new Date().toISOString()
       }, {

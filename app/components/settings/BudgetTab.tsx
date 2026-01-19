@@ -83,7 +83,7 @@ export function BudgetTab({ spaceId, settings }: BudgetTabProps) {
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">W tym miesiącu:</span>
-            <span className="font-semibold">${currentSpend.toFixed(2)} / ${budget.toFixed(2)}</span>
+            <span className="font-semibold">{currentSpend.toFixed(2)} zł / {budget.toFixed(2)} zł</span>
           </div>
 
           <div className="w-full bg-gray-200 rounded-full h-2">

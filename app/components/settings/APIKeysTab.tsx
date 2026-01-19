@@ -20,6 +20,8 @@ interface APIKeysTabProps {
   apiKeys: any[]
 }
 
+const MASKED_KEY = '••••••••••••••••'
+
 const SERVICES = [
   {
     id: 'openai',
@@ -92,7 +94,7 @@ export function APIKeysTab({ spaceId, apiKeys }: APIKeysTabProps) {
   const [keys, setKeys] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {}
     apiKeys.forEach(key => {
-      initial[key.service] = '••••••••••••••••' // Masked
+      initial[key.service] = MASKED_KEY // Masked
     })
     return initial
   })
@@ -102,8 +104,12 @@ export function APIKeysTab({ spaceId, apiKeys }: APIKeysTabProps) {
   const [testResults, setTestResults] = useState<Record<string, 'success' | 'error' | null>>({})
   const [saving, setSaving] = useState(false)
 
+  const isKeyMasked = (key: string | undefined): boolean => {
+    return !key || key.includes('••••')
+  }
+
   const handleTest = async (serviceId: string) => {
-    if (!keys[serviceId] || keys[serviceId].includes('••••')) {
+    if (isKeyMasked(keys[serviceId])) {
       alert('Najpierw wpisz klucz API')
       return
     }
@@ -138,7 +144,7 @@ export function APIKeysTab({ spaceId, apiKeys }: APIKeysTabProps) {
   }
 
   const handleSave = async (serviceId: string) => {
-    if (!keys[serviceId] || keys[serviceId].includes('••••')) {
+    if (isKeyMasked(keys[serviceId])) {
       alert('Najpierw wpisz klucz API')
       return
     }
@@ -159,7 +165,7 @@ export function APIKeysTab({ spaceId, apiKeys }: APIKeysTabProps) {
       if (res.ok) {
         alert('✅ Klucz zapisany!')
         // Mask the key
-        setKeys({ ...keys, [serviceId]: '••••••••••••••••' })
+        setKeys({ ...keys, [serviceId]: MASKED_KEY })
       } else {
         const data = await res.json()
         alert(data.error || 'Failed to save')
@@ -254,7 +260,7 @@ export function APIKeysTab({ spaceId, apiKeys }: APIKeysTabProps) {
                   <Button
                     variant="outline"
                     onClick={() => handleTest(service.id)}
-                    disabled={testing[service.id] || !keys[service.id] || keys[service.id].includes('••••')}
+                    disabled={testing[service.id] || isKeyMasked(keys[service.id])}
                   >
                     {testing[service.id] ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -269,7 +275,7 @@ export function APIKeysTab({ spaceId, apiKeys }: APIKeysTabProps) {
 
                   <Button
                     onClick={() => handleSave(service.id)}
-                    disabled={saving || !keys[service.id] || keys[service.id].includes('••••')}
+                    disabled={saving || isKeyMasked(keys[service.id])}
                   >
                     {saving ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
