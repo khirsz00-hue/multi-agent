@@ -779,6 +779,67 @@ export function ContentCreationModal({
           {/* Generated Content Preview (for non-reel content or finalized reels) */}
           {generatedContent && reelStage !== 'editing' && (
             <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 p-3 rounded">
+                <p className="text-sm font-medium text-green-900">
+                  ✅ Treść wygenerowana pomyślnie!
+                </p>
+              </div>
+              
+              {/* Hook */}
+              {generatedContent.hook && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                    🎬 Haczyk
+                  </Label>
+                  <div className="p-3 bg-gray-50 rounded border">
+                    <p className="text-sm text-gray-900">{generatedContent.hook}</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Body */}
+              {generatedContent.body && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                    📝 Treść
+                  </Label>
+                  <div className="p-3 bg-gray-50 rounded border max-h-64 overflow-y-auto">
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap">
+                      {generatedContent.body}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* CTA */}
+              {generatedContent.cta && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                    🎯 Wezwanie do działania
+                  </Label>
+                  <div className="p-3 bg-gray-50 rounded border">
+                    <p className="text-sm text-gray-900">{generatedContent.cta}</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Hashtags */}
+              {generatedContent.hashtags?.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                    #️⃣ Hasztagi
+                  </Label>
+                  <div className="p-3 bg-gray-50 rounded border">
+                    <p className="text-sm text-blue-600">
+                      {generatedContent.hashtags.join(' ')}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              
+              {/* Visual Suggestions */}
+              {generatedContent.visual_suggestions && (
               <div className="flex items-center justify-between">
                 <div className="bg-green-50 border border-green-200 p-3 rounded flex-1">
                   <p className="text-sm font-medium text-green-900">
