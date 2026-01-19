@@ -107,6 +107,7 @@ export default function SpacesPage() {
       </header>
 
       <div className="p-6">
+      <main className="container mx-auto px-4 py-8">
         {loading ? (
           <div className="text-center py-12">
             <p className="text-gray-500">Ładowanie przestrzeni...</p>
@@ -114,7 +115,7 @@ export default function SpacesPage() {
         ) : (
           <SpaceList spaces={spaces} />
         )}
-      </div>
+      </main>
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>

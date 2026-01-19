@@ -834,10 +834,17 @@ export function ContentCreationModal({
                   
                 </div>
               )}
+            </div>
+          )}
+          
+          {/* Video Generation Progress */}
               
               {/* Visual Suggestions */}
               {generatedContent.visual_suggestions && (
                 <div>
+          {/* Visual Suggestions */}
+          {generatedContent.visual_suggestions && (
+            <div>
                   <Label className="text-sm font-medium text-gray-700 mb-1 block">
                     🎨 Sugestie wizualne
                   </Label>
