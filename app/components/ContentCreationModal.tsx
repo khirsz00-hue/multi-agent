@@ -622,11 +622,7 @@ export function ContentCreationModal({
                   </p>
                   {currentRecommendation.hook_suggestion && (
                     <p className="text-sm text-blue-600 mt-2 italic">
-<<<<<<< HEAD
-                      💡 Sugerowany haczyk: &quot;{currentRecommendation.hook_suggestion}&quot;
-=======
                       💡 Suggested hook: &ldquo;{currentRecommendation.hook_suggestion}&rdquo;
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                     </p>
                   )}
                 </div>
@@ -765,20 +761,12 @@ export function ContentCreationModal({
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-<<<<<<< HEAD
-                    Generowanie treści...
-=======
                     {contentType === 'reel' ? 'Generating Draft Scenario...' : 'Generating Content...'}
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-2" />
-<<<<<<< HEAD
-                    Generuj treść
-=======
                     {contentType === 'reel' ? 'Generate Draft Scenario' : 'Generate Content'}
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </>
                 )}
               </Button>
@@ -788,12 +776,6 @@ export function ContentCreationModal({
           {/* Generated Content Preview (for non-reel content or finalized reels) */}
           {generatedContent && reelStage !== 'editing' && (
             <div className="space-y-4">
-<<<<<<< HEAD
-              <div className="bg-green-50 border border-green-200 p-3 rounded">
-                <p className="text-sm font-medium text-green-900">
-                  ✅ Treść wygenerowana pomyślnie!
-                </p>
-=======
               <div className="flex items-center justify-between">
                 <div className="bg-green-50 border border-green-200 p-3 rounded flex-1">
                   <p className="text-sm font-medium text-green-900">
@@ -821,33 +803,8 @@ export function ContentCreationModal({
                     </div>
                   )}
                 </div>
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
               </div>
               
-              {/* Hook */}
-              {generatedContent.hook && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                    🎬 Haczyk
-                  </Label>
-                  <div className="p-3 bg-gray-50 rounded border">
-                    <p className="text-sm text-gray-900">{generatedContent.hook}</p>
-                  </div>
-                </div>
-              )}
-              
-<<<<<<< HEAD
-              {/* Body */}
-              {generatedContent.body && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                    📝 Treść
-                  </Label>
-                  <div className="p-3 bg-gray-50 rounded border max-h-64 overflow-y-auto">
-                    <p className="text-sm text-gray-900 whitespace-pre-wrap">
-                      {generatedContent.body}
-                    </p>
-=======
               {editMode ? (
                 <>
                   {/* Edit Mode - Editable Fields */}
@@ -864,21 +821,7 @@ export function ContentCreationModal({
                       placeholder="Hook text..."
                       className="w-full"
                     />
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </div>
-<<<<<<< HEAD
-                </div>
-              )}
-              
-              {/* CTA */}
-              {generatedContent.cta && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                    🎯 Wezwanie do działania
-                  </Label>
-                  <div className="p-3 bg-gray-50 rounded border">
-                    <p className="text-sm text-gray-900">{generatedContent.cta}</p>
-=======
                   
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -894,23 +837,7 @@ export function ContentCreationModal({
                       rows={10}
                       className="w-full"
                     />
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </div>
-<<<<<<< HEAD
-                </div>
-              )}
-              
-              {/* Hashtags */}
-              {generatedContent.hashtags?.length > 0 && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                    #️⃣ Hasztagi
-                  </Label>
-                  <div className="p-3 bg-gray-50 rounded border">
-                    <p className="text-sm text-blue-600">
-                      {generatedContent.hashtags.join(' ')}
-                    </p>
-=======
                   
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -925,7 +852,6 @@ export function ContentCreationModal({
                       placeholder="CTA text..."
                       className="w-full"
                     />
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </div>
                   
                   <div>
@@ -1009,18 +935,6 @@ export function ContentCreationModal({
                 </>
               )}
               
-<<<<<<< HEAD
-              {/* Visual Suggestions */}
-              {generatedContent.visual_suggestions && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                    🎨 Sugestie wizualne
-                  </Label>
-                  <div className="p-3 bg-gray-50 rounded border">
-                    <pre className="text-xs whitespace-pre-wrap text-gray-700 font-mono">
-                      {JSON.stringify(generatedContent.visual_suggestions, null, 2)}
-                    </pre>
-=======
               {/* Meme Generator Section - Only for meme content type */}
               {contentType === 'meme' && generatedContent && (
                 <div className="space-y-4 border-t pt-4">
@@ -1034,7 +948,6 @@ export function ContentCreationModal({
                         <strong>U dołu:</strong> {generatedContent.meme_bottom_text || '(nie ustawione)'}
                       </p>
                     </div>
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </div>
                   
                   <GeneratorMemow
@@ -1087,11 +1000,7 @@ export function ContentCreationModal({
                   ) : (
                     <>
                       <Copy className="h-4 w-4 mr-2" />
-<<<<<<< HEAD
-                      Kopiuj do schowka
-=======
                       Copy
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                     </>
                   )}
                 </Button>
@@ -1101,12 +1010,8 @@ export function ContentCreationModal({
                   variant="outline"
                   disabled={saving}
                 >
-<<<<<<< HEAD
-                  Gotowe
-=======
                   <Save className="h-4 w-4 mr-2" />
                   Save
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                 </Button>
                 
                 {currentStep < totalSteps - 1 ? (

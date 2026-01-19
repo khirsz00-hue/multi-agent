@@ -86,31 +86,12 @@ export default function SpacesPage() {
   }
 
   return (
-<<<<<<< HEAD
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="ghost" size="icon">
-                  <Home className="h-5 w-5" />
-                </Button>
-              </Link>
-              <h1 className="text-2xl font-bold">Moje przestrzenie</h1>
-            </div>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nowa przestrzeń
-            </Button>
-=======
     <div className="min-h-screen">
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold">My Spaces</h1>
             <p className="text-gray-600 mt-1">Organize your AI agents in dedicated workspaces</p>
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
           </div>
           <Button onClick={() => setShowCreateDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -120,7 +101,7 @@ export default function SpacesPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">Ładowanie przestrzeni...</p>
+            <p className="text-gray-500">Loading spaces...</p>
           </div>
         ) : (
           <SpaceList spaces={spaces} />
