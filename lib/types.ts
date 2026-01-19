@@ -62,6 +62,20 @@ export interface Conversation {
   updated_at: string;
 }
 
+export interface AudienceInsight {
+  id: string;
+  agent_id: string;
+  source: 'notion' | 'facebook' | 'manual';
+  source_id?: string;
+  pain_point: string;
+  category?: string;
+  frequency: number;
+  sentiment?: string;
+  raw_content?: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+}
+
 // LLM Models configuration
 export const LLM_MODELS: Record<LLMProvider, string[]> = {
   openai: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],

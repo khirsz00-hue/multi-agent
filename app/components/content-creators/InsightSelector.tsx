@@ -6,11 +6,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Lightbulb } from 'lucide-react'
+import type { AudienceInsight } from '@/lib/types'
 
 interface InsightSelectorProps {
-  insights: any[]
-  selectedInsight: any
-  onSelectInsight: (insight: any) => void
+  insights: AudienceInsight[]
+  selectedInsight: AudienceInsight | null
+  onSelectInsight: (insight: AudienceInsight) => void
   customInsight: string
   onCustomInsightChange: (value: string) => void
 }
@@ -63,7 +64,7 @@ export function InsightSelector({
                       <Lightbulb className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 line-clamp-2">
-                          {insight.title || insight.content || insight.pain_point}
+                          {insight.pain_point}
                         </p>
                         {insight.sentiment && (
                           <p className="text-xs text-gray-500 mt-1">
