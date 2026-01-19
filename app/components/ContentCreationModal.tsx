@@ -622,6 +622,7 @@ export function ContentCreationModal({
                   </p>
                   {currentRecommendation.hook_suggestion && (
                     <p className="text-sm text-blue-600 mt-2 italic">
+                      💡 Suggested hook: &ldquo;{currentRecommendation.hook_suggestion}&rdquo;
                       💡 Sugerowany haczyk: &quot;{currentRecommendation.hook_suggestion}&quot;
                     </p>
                   )}
@@ -761,11 +762,13 @@ export function ContentCreationModal({
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {contentType === 'reel' ? 'Generating Draft Scenario...' : 'Generating Content...'}
                     Generowanie treści...
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-2" />
+                    {contentType === 'reel' ? 'Generate Draft Scenario' : 'Generate Content'}
                     Generuj treść
                   </>
                 )}
@@ -776,6 +779,82 @@ export function ContentCreationModal({
           {/* Generated Content Preview (for non-reel content or finalized reels) */}
           {generatedContent && reelStage !== 'editing' && (
             <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="bg-green-50 border border-green-200 p-3 rounded flex-1">
+                  <p className="text-sm font-medium text-green-900">
+                    ✅ {contentType === 'reel' && reelStage === 'finalized' ? 'Reel Finalized Successfully!' : 'Content Generated Successfully!'}
+                  </p>
+                  {contentType === 'reel' && reelStage === 'finalized' && (
+                    <p className="text-sm text-green-700 mt-1">
+                      Your edited scenario has been optimized and is ready to use!
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2 ml-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleEditMode}
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    {editMode ? 'Save' : 'Edit'}
+                  </Button>
+                  {saving && (
+                    <div className="flex items-center text-xs text-gray-500">
+                      <Clock className="h-3 w-3 mr-1 animate-spin" />
+                      Saving...
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {editMode ? (
+                <>
+                  {/* Edit Mode - Editable Fields */}
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                      🎬 Hook
+                    </Label>
+                    <Input
+                      value={editedHook}
+                      onChange={(e) => {
+                        setEditedHook(e.target.value)
+                        scheduleAutoSave()
+                      }}
+                      placeholder="Hook text..."
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                      📝 Body
+                    </Label>
+                    <Textarea
+                      value={editedBody}
+                      onChange={(e) => {
+                        setEditedBody(e.target.value)
+                        scheduleAutoSave()
+                      }}
+                      placeholder="Body content..."
+                      rows={10}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                      🎯 Call to Action
+                    </Label>
+                    <Input
+                      value={editedCta}
+                      onChange={(e) => {
+                        setEditedCta(e.target.value)
+                        scheduleAutoSave()
+                      }}
+                      placeholder="CTA text..."
+                      className="w-full"
+                    />
               <div className="bg-green-50 border border-green-200 p-3 rounded">
                 <p className="text-sm font-medium text-green-900">
                   ✅ Treść wygenerowana pomyślnie!
@@ -839,6 +918,19 @@ export function ContentCreationModal({
           
           {/* Video Generation Progress */}
               
+              {/* Meme Generator Section - Only for meme content type */}
+              {contentType === 'meme' && generatedContent && (
+                <div className="space-y-4 border-t pt-4">
+                  <div>
+                    <h3 className="font-semibold mb-2">📸 Tekst Mema:</h3>
+                    <div className="bg-gray-100 p-3 rounded space-y-2">
+                      <p className="text-sm">
+                        <strong>U góry:</strong> {generatedContent.meme_top_text || '(nie ustawione)'}
+                      </p>
+                      <p className="text-sm">
+                        <strong>U dołu:</strong> {generatedContent.meme_bottom_text || '(nie ustawione)'}
+                      </p>
+                    </div>
               {/* Visual Suggestions */}
               {generatedContent.visual_suggestions && (
                 <div>
@@ -904,6 +996,7 @@ export function ContentCreationModal({
                   ) : (
                     <>
                       <Copy className="h-4 w-4 mr-2" />
+                      Copy
                       Kopiuj do schowka
                     </>
                   )}
@@ -914,6 +1007,8 @@ export function ContentCreationModal({
                   variant="outline"
                   disabled={saving}
                 >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
                   Gotowe
                 </Button>
                 

@@ -86,6 +86,12 @@ export default function SpacesPage() {
   }
 
   return (
+    <div className="min-h-screen">
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">My Spaces</h1>
+            <p className="text-gray-600 mt-1">Organize your AI agents in dedicated workspaces</p>
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
@@ -110,7 +116,7 @@ export default function SpacesPage() {
       <main className="container mx-auto px-4 py-8">
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">Ładowanie przestrzeni...</p>
+            <p className="text-gray-500">Loading spaces...</p>
           </div>
         ) : (
           <SpaceList spaces={spaces} />

@@ -5,6 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FolderOpen, Bot, Upload, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 
+export default async function Home() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // If user is logged in, redirect to spaces dashboard
+  if (user) {
+    redirect('/spaces')
+  }
+  
+  // If not logged in, redirect to login
+  redirect('/login')
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
