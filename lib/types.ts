@@ -76,6 +76,20 @@ export interface AudienceInsight {
   created_at: string;
 }
 
+export interface MemeProposal {
+  topText: string;
+  bottomText: string;
+  middleText?: string;
+  template: string;
+  reasoning: string;
+}
+
+export interface MemeFeedbackHistory {
+  proposal: MemeProposal;
+  feedback: string;
+  timestamp: Date;
+}
+
 // LLM Models configuration
 export const LLM_MODELS: Record<LLMProvider, string[]> = {
   openai: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],

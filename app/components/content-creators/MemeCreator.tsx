@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Badge } from '@/components/ui/badge'
 import { InsightSelector } from './InsightSelector'
-import type { Space, AudienceInsight } from '@/lib/types'
+import type { Space, AudienceInsight, MemeProposal, MemeFeedbackHistory } from '@/lib/types'
 
 interface MemeCreatorProps {
   space: Space
@@ -20,10 +20,10 @@ export function MemeCreator({ space, insights }: MemeCreatorProps) {
   const [step, setStep] = useState<'insight' | 'proposal' | 'generate' | 'preview'>('insight')
   const [selectedInsight, setSelectedInsight] = useState<AudienceInsight | null>(null)
   const [customInsight, setCustomInsight] = useState('')
-  const [proposal, setProposal] = useState<any>(null)
+  const [proposal, setProposal] = useState<MemeProposal | null>(null)
   const [loadingProposal, setLoadingProposal] = useState(false)
   const [feedback, setFeedback] = useState('')
-  const [feedbackHistory, setFeedbackHistory] = useState<any[]>([])
+  const [feedbackHistory, setFeedbackHistory] = useState<MemeFeedbackHistory[]>([])
   const [selectedEngine, setSelectedEngine] = useState('dall-e-3')
   const [generating, setGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
@@ -76,7 +76,7 @@ export function MemeCreator({ space, insights }: MemeCreatorProps) {
         throw new Error(data.error || 'Błąd generowania propozycji')
       }
       
-      if (feedback) {
+      if (feedback && proposal) {
         setFeedbackHistory([...feedbackHistory, {
           proposal,
           feedback,

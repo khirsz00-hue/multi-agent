@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
+import type { MemeProposal } from '@/lib/types'
 
 export async function POST(request: Request) {
   try {
@@ -15,11 +16,11 @@ export async function POST(request: Request) {
     let imageUrl: string
     
     if (engine === 'dall-e-3') {
-      imageUrl = await generateWithDallE(proposal)
+      imageUrl = await generateWithDallE(proposal as MemeProposal)
     } else if (engine === 'google-imagen') {
-      imageUrl = await generateWithImagen(proposal)
+      imageUrl = await generateWithImagen(proposal as MemeProposal)
     } else if (engine === 'replicate') {
-      imageUrl = await generateWithReplicate(proposal)
+      imageUrl = await generateWithReplicate(proposal as MemeProposal)
     } else {
       throw new Error('Unsupported engine')
     }
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function generateWithDallE(proposal: any): Promise<string> {
+async function generateWithDallE(proposal: MemeProposal): Promise<string> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   
   const prompt = `Create a meme image with the following text:
@@ -58,14 +59,14 @@ Make it funny, relatable, and visually clear. Use bold white text with black out
   return response.data[0].url
 }
 
-async function generateWithImagen(proposal: any): Promise<string> {
+async function generateWithImagen(proposal: MemeProposal): Promise<string> {
   // TODO: Implement Google Imagen
   // For now, fallback to DALL-E
   console.log('Google Imagen not implemented yet, using DALL-E')
   return generateWithDallE(proposal)
 }
 
-async function generateWithReplicate(proposal: any): Promise<string> {
+async function generateWithReplicate(proposal: MemeProposal): Promise<string> {
   // TODO: Implement Replicate SDXL
   // For now, fallback to DALL-E
   console.log('Replicate not implemented yet, using DALL-E')
