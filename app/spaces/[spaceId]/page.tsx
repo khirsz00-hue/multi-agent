@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation'
 
-export default function SpacePage({
+export default async function SpacePage({
   params,
 }: {
-  params: { spaceId: string }
+  params: Promise<{ spaceId: string }>
 }) {
+  const { spaceId } = await params
   // Default view: Agenci
-  redirect(`/spaces/${params.spaceId}/agents`)
+  redirect(`/spaces/${spaceId}/agents`)
 }
