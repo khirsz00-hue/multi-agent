@@ -161,19 +161,7 @@ export default function MultiAgentDashboard({ spaceId }: MultiAgentDashboardProp
           <Link href="/dashboard/content-calendar">
             <Button variant="outline" className="relative">
               <Calendar className="h-4 w-4 mr-2" />
-<<<<<<< HEAD
               Kalendarz treści
-=======
-              Content Calendar
-              {upcomingContent.length > 0 && (
-                <Badge 
-                  variant="secondary" 
-                  className="ml-2 bg-blue-500 text-white"
-                >
-                  {upcomingContent.length}
-                </Badge>
-              )}
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
             </Button>
           </Link>
           <Button onClick={loadDashboard} variant="outline" size="sm">
