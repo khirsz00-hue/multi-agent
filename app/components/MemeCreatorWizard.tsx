@@ -10,6 +10,7 @@ import { Loader2, Sparkles, Download, RefreshCw, Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast'
 import Image from 'next/image'
+import type { AudienceInsight } from '@/lib/types'
 
 const MEME_TEMPLATES = [
   { id: 'drake', name: 'Drake', preview: '🙅‍♂️➡️🙋‍♂️' },
@@ -50,7 +51,12 @@ const AI_ENGINES = [
   }
 ]
 
-export function MemeCreatorWizard() {
+interface MemeCreatorWizardProps {
+  insights?: AudienceInsight[]
+  spaceId?: string
+}
+
+export function MemeCreatorWizard({ insights = [], spaceId }: MemeCreatorWizardProps) {
   const { showToast } = useToast()
   const [step, setStep] = useState<'input' | 'suggestion' | 'customize' | 'generate' | 'result'>('input')
   

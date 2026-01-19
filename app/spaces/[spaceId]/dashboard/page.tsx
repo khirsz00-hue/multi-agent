@@ -8,7 +8,7 @@ import MultiAgentDashboard from '@/components/dashboard/MultiAgentDashboard'
 
 export default function DashboardPage() {
   const params = useParams()
-  const spaceId = params.id as string
+  const spaceId = params.spaceId as string
 
   return (
     <div className="min-h-screen bg-gray-50">
