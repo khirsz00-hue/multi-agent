@@ -6,9 +6,9 @@ import { Settings as SettingsIcon } from 'lucide-react'
 export default async function SettingsPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ spaceId: string }>
 }) {
-  const { id } = await params
+  const { spaceId } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -20,32 +20,32 @@ export default async function SettingsPage({
   const { data: space } = await supabase
     .from('spaces')
     .select('*')
-    .eq('id', id)
+    .eq('id', spaceId)
     .eq('user_id', user.id)
     .single()
 
   if (!space) {
-    redirect('/dashboard')
+    redirect('/spaces')
   }
 
   // Fetch API keys
   const { data: apiKeys } = await supabase
     .from('api_keys')
     .select('*')
-    .eq('space_id', id)
+    .eq('space_id', spaceId)
 
   // Fetch settings
   let { data: settings } = await supabase
     .from('space_settings')
     .select('*')
-    .eq('space_id', id)
+    .eq('space_id', spaceId)
     .single()
 
   // Create default settings if not exist
   if (!settings) {
     const { data: newSettings } = await supabase
       .from('space_settings')
-      .insert({ space_id: id })
+      .insert({ space_id: spaceId })
       .select()
       .single()
     
@@ -69,7 +69,7 @@ export default async function SettingsPage({
 
       {/* Settings Tabs */}
       <SettingsTabs
-        spaceId={id}
+        spaceId={spaceId}
         apiKeys={apiKeys || []}
         settings={settings}
       />

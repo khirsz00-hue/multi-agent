@@ -50,7 +50,12 @@ const AI_ENGINES = [
   }
 ]
 
-export function MemeCreatorWizard() {
+interface MemeCreatorWizardProps {
+  insights?: any[]
+  spaceId?: string
+}
+
+export function MemeCreatorWizard({ insights = [], spaceId }: MemeCreatorWizardProps = {}) {
   const { showToast } = useToast()
   const [step, setStep] = useState<'input' | 'suggestion' | 'customize' | 'generate' | 'result'>('input')
   
