@@ -8,8 +8,9 @@ export default async function SpaceLayout({
   params,
 }: {
   children: React.ReactNode
-  params: { spaceId: string }
+  params: Promise<{ spaceId: string }>
 }) {
+  const { spaceId } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -21,7 +22,7 @@ export default async function SpaceLayout({
   const { data: space, error } = await supabase
     .from('spaces')
     .select('*')
-    .eq('id', params.spaceId)
+    .eq('id', spaceId)
     .eq('user_id', user.id)
     .single()
 

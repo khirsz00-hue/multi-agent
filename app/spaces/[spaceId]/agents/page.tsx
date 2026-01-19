@@ -7,8 +7,9 @@ import Link from 'next/link'
 export default async function AgentsPage({
   params,
 }: {
-  params: { spaceId: string }
+  params: Promise<{ spaceId: string }>
 }) {
+  const { spaceId } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -20,7 +21,7 @@ export default async function AgentsPage({
   const { data: agents } = await supabase
     .from('agents')
     .select('*')
-    .eq('space_id', params.spaceId)
+    .eq('space_id', spaceId)
     .order('created_at', { ascending: false })
 
   return (
@@ -35,7 +36,7 @@ export default async function AgentsPage({
             </p>
           </div>
           <Button asChild>
-            <Link href={`/spaces/${params.spaceId}/agents/new`}>
+            <Link href={`/spaces/${spaceId}/agents/new`}>
               <Plus className="h-4 w-4 mr-2" />
               Nowy Agent
             </Link>
@@ -56,7 +57,7 @@ export default async function AgentsPage({
                   <Bot className="h-6 w-6 text-blue-600" />
                 </div>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href={`/spaces/${params.spaceId}/agents/${agent.id}/settings`}>
+                  <Link href={`/spaces/${spaceId}/agents/${agent.id}/settings`}>
                     <Settings className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -92,7 +93,7 @@ export default async function AgentsPage({
             Stwórz swojego pierwszego agenta, aby rozpocząć tworzenie contentu
           </p>
           <Button asChild>
-            <Link href={`/spaces/${params.spaceId}`}>
+            <Link href={`/spaces/${spaceId}`}>
               <Plus className="h-4 w-4 mr-2" />
               Stwórz Agenta
             </Link>
