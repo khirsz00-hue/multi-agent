@@ -622,11 +622,7 @@ export function ContentCreationModal({
                   </p>
                   {currentRecommendation.hook_suggestion && (
                     <p className="text-sm text-blue-600 mt-2 italic">
-<<<<<<< HEAD
                       💡 Sugerowany haczyk: &quot;{currentRecommendation.hook_suggestion}&quot;
-=======
-                      💡 Suggested hook: &ldquo;{currentRecommendation.hook_suggestion}&rdquo;
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                     </p>
                   )}
                 </div>
@@ -765,20 +761,12 @@ export function ContentCreationModal({
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-<<<<<<< HEAD
                     Generowanie treści...
-=======
-                    {contentType === 'reel' ? 'Generating Draft Scenario...' : 'Generating Content...'}
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-2" />
-<<<<<<< HEAD
                     Generuj treść
-=======
-                    {contentType === 'reel' ? 'Generate Draft Scenario' : 'Generate Content'}
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </>
                 )}
               </Button>
@@ -788,40 +776,10 @@ export function ContentCreationModal({
           {/* Generated Content Preview (for non-reel content or finalized reels) */}
           {generatedContent && reelStage !== 'editing' && (
             <div className="space-y-4">
-<<<<<<< HEAD
               <div className="bg-green-50 border border-green-200 p-3 rounded">
                 <p className="text-sm font-medium text-green-900">
                   ✅ Treść wygenerowana pomyślnie!
                 </p>
-=======
-              <div className="flex items-center justify-between">
-                <div className="bg-green-50 border border-green-200 p-3 rounded flex-1">
-                  <p className="text-sm font-medium text-green-900">
-                    ✅ {contentType === 'reel' && reelStage === 'finalized' ? 'Reel Finalized Successfully!' : 'Content Generated Successfully!'}
-                  </p>
-                  {contentType === 'reel' && reelStage === 'finalized' && (
-                    <p className="text-sm text-green-700 mt-1">
-                      Your edited scenario has been optimized and is ready to use!
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2 ml-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={toggleEditMode}
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    {editMode ? 'Save' : 'Edit'}
-                  </Button>
-                  {saving && (
-                    <div className="flex items-center text-xs text-gray-500">
-                      <Clock className="h-3 w-3 mr-1 animate-spin" />
-                      Saving...
-                    </div>
-                  )}
-                </div>
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
               </div>
               
               {/* Hook */}
@@ -836,7 +794,6 @@ export function ContentCreationModal({
                 </div>
               )}
               
-<<<<<<< HEAD
               {/* Body */}
               {generatedContent.body && (
                 <div>
@@ -847,26 +804,7 @@ export function ContentCreationModal({
                     <p className="text-sm text-gray-900 whitespace-pre-wrap">
                       {generatedContent.body}
                     </p>
-=======
-              {editMode ? (
-                <>
-                  {/* Edit Mode - Editable Fields */}
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                      🎬 Hook
-                    </Label>
-                    <Input
-                      value={editedHook}
-                      onChange={(e) => {
-                        setEditedHook(e.target.value)
-                        scheduleAutoSave()
-                      }}
-                      placeholder="Hook text..."
-                      className="w-full"
-                    />
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </div>
-<<<<<<< HEAD
                 </div>
               )}
               
@@ -878,25 +816,7 @@ export function ContentCreationModal({
                   </Label>
                   <div className="p-3 bg-gray-50 rounded border">
                     <p className="text-sm text-gray-900">{generatedContent.cta}</p>
-=======
-                  
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                      📝 Body
-                    </Label>
-                    <Textarea
-                      value={editedBody}
-                      onChange={(e) => {
-                        setEditedBody(e.target.value)
-                        scheduleAutoSave()
-                      }}
-                      placeholder="Body content..."
-                      rows={10}
-                      className="w-full"
-                    />
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </div>
-<<<<<<< HEAD
                 </div>
               )}
               
@@ -910,106 +830,11 @@ export function ContentCreationModal({
                     <p className="text-sm text-blue-600">
                       {generatedContent.hashtags.join(' ')}
                     </p>
-=======
-                  
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                      🎯 Call to Action
-                    </Label>
-                    <Input
-                      value={editedCta}
-                      onChange={(e) => {
-                        setEditedCta(e.target.value)
-                        scheduleAutoSave()
-                      }}
-                      placeholder="CTA text..."
-                      className="w-full"
-                    />
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </div>
                   
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                      #️⃣ Hashtags (space-separated)
-                    </Label>
-                    <Input
-                      value={editedHashtags}
-                      onChange={(e) => {
-                        setEditedHashtags(e.target.value)
-                        scheduleAutoSave()
-                      }}
-                      placeholder="#hashtag1 #hashtag2"
-                      className="w-full"
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* View Mode - Display Content */}
-                  {generatedContent.hook && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                        🎬 Hook
-                      </Label>
-                      <div className="p-3 bg-gray-50 rounded border">
-                        <p className="text-sm text-gray-900">{generatedContent.hook}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {generatedContent.body && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                        📝 Body
-                      </Label>
-                      <div className="p-3 bg-gray-50 rounded border max-h-64 overflow-y-auto">
-                        <p className="text-sm text-gray-900 whitespace-pre-wrap">
-                          {generatedContent.body}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {generatedContent.cta && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                        🎯 Call to Action
-                      </Label>
-                      <div className="p-3 bg-gray-50 rounded border">
-                        <p className="text-sm text-gray-900">{generatedContent.cta}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {generatedContent.hashtags?.length > 0 && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                        #️⃣ Hashtags
-                      </Label>
-                      <div className="p-3 bg-gray-50 rounded border">
-                        <p className="text-sm text-blue-600">
-                          {generatedContent.hashtags.join(' ')}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {generatedContent.visual_suggestions && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-1 block">
-                        🎨 Visual Suggestions
-                      </Label>
-                      <div className="p-3 bg-gray-50 rounded border">
-                        <pre className="text-xs whitespace-pre-wrap text-gray-700 font-mono">
-                          {JSON.stringify(generatedContent.visual_suggestions, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-                </>
+                </div>
               )}
               
-<<<<<<< HEAD
               {/* Visual Suggestions */}
               {generatedContent.visual_suggestions && (
                 <div>
@@ -1020,21 +845,6 @@ export function ContentCreationModal({
                     <pre className="text-xs whitespace-pre-wrap text-gray-700 font-mono">
                       {JSON.stringify(generatedContent.visual_suggestions, null, 2)}
                     </pre>
-=======
-              {/* Meme Generator Section - Only for meme content type */}
-              {contentType === 'meme' && generatedContent && (
-                <div className="space-y-4 border-t pt-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">📸 Tekst Mema:</h3>
-                    <div className="bg-gray-100 p-3 rounded space-y-2">
-                      <p className="text-sm">
-                        <strong>U góry:</strong> {generatedContent.meme_top_text || '(nie ustawione)'}
-                      </p>
-                      <p className="text-sm">
-                        <strong>U dołu:</strong> {generatedContent.meme_bottom_text || '(nie ustawione)'}
-                      </p>
-                    </div>
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                   </div>
                   
                   <GeneratorMemow
@@ -1087,11 +897,7 @@ export function ContentCreationModal({
                   ) : (
                     <>
                       <Copy className="h-4 w-4 mr-2" />
-<<<<<<< HEAD
                       Kopiuj do schowka
-=======
-                      Copy
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                     </>
                   )}
                 </Button>
@@ -1101,12 +907,7 @@ export function ContentCreationModal({
                   variant="outline"
                   disabled={saving}
                 >
-<<<<<<< HEAD
                   Gotowe
-=======
-                  <Save className="h-4 w-4 mr-2" />
-                  Save
->>>>>>> b5afb276467617e4233ee881a307558841b5d0af
                 </Button>
                 
                 {currentStep < totalSteps - 1 ? (
