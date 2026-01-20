@@ -13,6 +13,7 @@ import {
   Mail,
   Users,
   Calendar,
+  Palette,
   ChevronDown,
   ChevronRight,
   Menu,
@@ -35,6 +36,11 @@ export function SpaceSidebar({ space }: SpaceSidebarProps) {
       href: `/spaces/${space.id}/agents`,
       icon: Bot,
       default: true
+    },
+    {
+      name: 'Brand Settings',
+      href: `/spaces/${space.id}/brand-settings`,
+      icon: Palette
     },
     {
       name: 'Content Creator',
