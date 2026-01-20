@@ -220,7 +220,7 @@ export function MemeCreatorWizard({ insights = [], spaceId }: MemeCreatorWizardP
                       </div>
                       {insight.sentiment && (
                         <p className="text-xs text-gray-500 mt-1">
-                          Sentiment: {insight.sentiment}
+                          Sentyment: {insight.sentiment}
                         </p>
                       )}
                     </button>

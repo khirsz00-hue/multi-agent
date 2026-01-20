@@ -39,12 +39,12 @@ ZASADY:
 WAŻNE: Odpowiadaj ZAWSZE po polsku!`
 
     if (previousSuggestion && feedback) {
-      systemPrompt += `\n\nPREVIOUS SUGGESTION:
+      systemPrompt += `\n\nPOPRZEDNIA SUGESTIA:
 ${JSON.stringify(previousSuggestion, null, 2)}
 
-USER FEEDBACK: "${feedback}"
+FEEDBACK OD UŻYTKOWNIKA: "${feedback}"
 
-Generate IMPROVED version based on feedback. Keep what works, fix what doesn't.`
+Wygeneruj ULEPSZONĄ wersję na podstawie feedbacku. Zachowaj to, co działa, popraw to, co nie działa.`
     }
     
     const completion = await openai.chat.completions.create({
