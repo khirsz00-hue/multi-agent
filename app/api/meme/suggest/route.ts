@@ -30,6 +30,12 @@ Zwróć JSON:
   "relatability_score": 0-100
 }
 
+ZASADY:
+- Tekst musi być KRÓTKI i treściwy
+- Używaj humoru związanego z ADHD (chaos, ironia, autoparodia)
+- Dopasuj template do struktury treści
+- Mem musi być NATYCHMIAST rozpoznawalny
+
 WAŻNE: Odpowiadaj ZAWSZE po polsku!`
 
     if (previousSuggestion && feedback) {
