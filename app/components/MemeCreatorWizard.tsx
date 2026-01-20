@@ -98,9 +98,9 @@ export function MemeCreatorWizard({ insights = [], spaceId }: MemeCreatorWizardP
       setBottomText(data.suggestion.bottom_text)
       setSelectedTemplate(data.suggestion.template)
       setStep('suggestion')
-      showToast('Meme suggestion generated successfully!', 'success')
+      showToast('Sugestia mema wygenerowana pomyślnie!', 'success')
     } catch (error: any) {
-      showToast(error.message || 'Error generating suggestion', 'error')
+      showToast(error.message || 'Błąd generowania sugestii', 'error')
     } finally {
       setLoadingSuggestion(false)
     }
@@ -108,7 +108,7 @@ export function MemeCreatorWizard({ insights = [], spaceId }: MemeCreatorWizardP
   
   const handleRegenerate = async () => {
     if (!feedback.trim()) {
-      showToast('Please provide feedback before regenerating', 'error')
+      showToast('Podaj feedback przed regeneracją', 'error')
       return
     }
     
@@ -135,9 +135,9 @@ export function MemeCreatorWizard({ insights = [], spaceId }: MemeCreatorWizardP
       setBottomText(data.suggestion.bottom_text)
       setSelectedTemplate(data.suggestion.template)
       setFeedback('')
-      showToast('Meme regenerated based on your feedback!', 'success')
+      showToast('Mem zregenerowany na podstawie feedbacku!', 'success')
     } catch (error: any) {
-      showToast(error.message || 'Error regenerating meme', 'error')
+      showToast(error.message || 'Błąd regeneracji mema', 'error')
     } finally {
       setLoadingSuggestion(false)
     }
@@ -167,9 +167,9 @@ export function MemeCreatorWizard({ insights = [], spaceId }: MemeCreatorWizardP
       
       setGeneratedImageUrl(data.imageUrl)
       setStep('result')
-      showToast('Meme generated successfully!', 'success')
+      showToast('Mem wygenerowany pomyślnie!', 'success')
     } catch (error: any) {
-      showToast(error.message || 'Error generating meme image', 'error')
+      showToast(error.message || 'Błąd generowania obrazu mema', 'error')
       setStep('customize')
     } finally {
       setGenerating(false)
@@ -183,8 +183,56 @@ export function MemeCreatorWizard({ insights = [], spaceId }: MemeCreatorWizardP
         <div className="space-y-6">
           <div>
             <Label className="text-lg font-semibold mb-2 block">
-              1️⃣ Wpisz swój insight lub wybierz z Notion
+              1️⃣ Wybierz insight z Notion lub wpisz własny
             </Label>
+            
+            {/* NEW: Insights Selector */}
+            {insights && insights.length > 0 && (
+              <div className="mb-4">
+                <Label className="text-sm font-medium mb-2 block">
+                  💡 Insights z Notion:
+                </Label>
+                <div className="grid gap-2 max-h-64 overflow-y-auto">
+                  {insights.map((insight) => (
+                    <button
+                      key={insight.id}
+                      onClick={() => setInsightText(insight.pain_point)}
+                      className={`text-left p-3 border rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors ${
+                        insightText === insight.pain_point
+                          ? 'bg-blue-50 border-blue-500'
+                          : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm flex-1">{insight.pain_point}</p>
+                        <div className="flex gap-1 flex-shrink-0">
+                          {insight.category && (
+                            <Badge variant="outline" className="text-xs">
+                              {insight.category}
+                            </Badge>
+                          )}
+                          {insight.frequency && (
+                            <Badge variant="secondary" className="text-xs">
+                              {insight.frequency}x
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      {insight.sentiment && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Sentyment: {insight.sentiment}
+                        </p>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-center my-3 text-sm text-gray-500">
+                  — lub —
+                </div>
+              </div>
+            )}
+            
+            {/* Existing Textarea */}
             <Textarea
               placeholder="Np: 'POV: Próbujesz zarządzać wieloma zadaniami ale ADHD ma inne plany...'"
               value={insightText}

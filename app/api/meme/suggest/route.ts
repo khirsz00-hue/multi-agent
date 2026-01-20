@@ -16,40 +16,42 @@ export async function POST(request: Request) {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
     
     // Build system prompt with feedback
-    let systemPrompt = `You are a viral meme creator for ADHD/productivity content.
-    
-Your job: Analyze the insight and create a FUNNY, RELATABLE meme suggestion.
+    let systemPrompt = `Jesteś ekspertem od tworzenia viralowych memów dotyczących ADHD i produktywności.
 
-Return JSON:
+Twoje zadanie: Przeanalizuj insight i stwórz ZABAWNĄ, RELATABLE sugestię mema.
+
+Zwróć JSON:
 {
-  "top_text": "SHORT TEXT FOR TOP (max 60 chars)",
-  "bottom_text": "SHORT TEXT FOR BOTTOM (max 60 chars)",
+  "top_text": "KRÓTKI TEKST NA GÓRZE (max 60 znaków)",
+  "bottom_text": "KRÓTKI TEKST NA DOLE (max 60 znaków)",
   "template": "drake" | "distracted_boyfriend" | "two_buttons" | "expanding_brain" | "is_this" | "change_my_mind",
-  "reasoning": "Why this meme works for this insight",
+  "reasoning": "Dlaczego ten mem będzie działał",
   "humor_score": 0-100,
   "relatability_score": 0-100
 }
 
-RULES:
-- Keep text SHORT and punchy
-- Use ADHD humor (chaos, irony, self-deprecating)
-- Match template to content structure
-- Make it INSTANTLY recognizable`
+ZASADY:
+- Tekst musi być KRÓTKI i treściwy
+- Używaj humoru związanego z ADHD (chaos, ironia, autoparodia)
+- Dopasuj template do struktury treści
+- Mem musi być NATYCHMIAST rozpoznawalny
+
+WAŻNE: Odpowiadaj ZAWSZE po polsku!`
 
     if (previousSuggestion && feedback) {
-      systemPrompt += `\n\nPREVIOUS SUGGESTION:
+      systemPrompt += `\n\nPOPRZEDNIA SUGESTIA:
 ${JSON.stringify(previousSuggestion, null, 2)}
 
-USER FEEDBACK: "${feedback}"
+FEEDBACK OD UŻYTKOWNIKA: "${feedback}"
 
-Generate IMPROVED version based on feedback. Keep what works, fix what doesn't.`
+Wygeneruj ULEPSZONĄ wersję na podstawie feedbacku. Zachowaj to, co działa, popraw to, co nie działa.`
     }
     
     const completion = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Insight:\n${insightText}\n\nCreate a viral meme for this.` }
+        { role: 'user', content: `Insight:\n${insightText}\n\nStwórz viralowego mema na podstawie tego insightu.` }
       ],
       response_format: { type: 'json_object' },
       temperature: 0.9
