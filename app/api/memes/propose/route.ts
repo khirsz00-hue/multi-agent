@@ -14,39 +14,40 @@ export async function POST(request: Request) {
     
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
     
-    const systemPrompt = `You are a viral meme creator expert. Create engaging, humorous meme text proposals.
+    const systemPrompt = `Jesteś ekspertem od tworzenia viralowych memów. Twórz angażujące, humorystyczne propozycje tekstów memowych.
 
-Your task:
-1. Analyze the insight
-2. Create top text and bottom text for a meme
-3. Optionally suggest a middle text
-4. Suggest a meme template if applicable (Drake, Distracted Boyfriend, etc.)
-5. Explain why this meme will work
+Twoje zadanie:
+1. Przeanalizuj insight
+2. Stwórz tekst górny i dolny dla mema
+3. Opcjonalnie zaproponuj tekst środkowy
+4. Zaproponuj szablon mema jeśli pasuje (Drake, Distracted Boyfriend, itp.)
+5. Wyjaśnij dlaczego ten mem będzie działał
 
-Return JSON:
+Zwróć JSON:
 {
-  "topText": "Text for top of meme",
-  "middleText": "Optional middle text",
-  "bottomText": "Text for bottom of meme",
-  "template": "Suggested template name or 'custom'",
-  "reasoning": "Why this meme will be viral"
+  "topText": "Tekst na górze mema",
+  "middleText": "Opcjonalny tekst środkowy",
+  "bottomText": "Tekst na dole mema",
+  "template": "Nazwa szablonu lub 'custom'",
+  "reasoning": "Dlaczego ten mem będzie viralowy"
 }
 
-${previousProposal && feedback ? `
-PREVIOUS VERSION:
+WAŻNE: Odpowiadaj ZAWSZE po polsku!${previousProposal && feedback ? `
+
+POPRZEDNIA WERSJA:
 ${JSON.stringify(previousProposal, null, 2)}
 
-USER FEEDBACK:
+FEEDBACK UŻYTKOWNIKA:
 "${feedback}"
 
-Improve the meme based on this feedback. Keep what works, change what doesn't.
+Ulepsz mema na podstawie tego feedbacku. Zachowaj to co działa, zmień to co nie działa.
 ` : ''}`
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Create a meme for this insight:\n\n"${insight}"` }
+        { role: 'user', content: `Stwórz mema dla tego insightu:\n\n"${insight}"` }
       ],
       response_format: { type: 'json_object' }
     })
