@@ -434,6 +434,11 @@ export function MemeCreatorWizard({ insights = [], spaceId }: MemeCreatorWizardP
                         <div className="text-sm text-gray-600">
                           Jakość: {engine.quality} • Szybkość: {engine.speed}
                         </div>
+                        {engine.description && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {engine.description}
+                          </div>
+                        )}
                       </div>
                       <div className="text-sm font-semibold">
                         ${engine.cost.toFixed(2)}
