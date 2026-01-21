@@ -8,6 +8,23 @@ export async function POST(request: Request) {
   try {
     const { topText, bottomText, template, engine = 'dall-e-3' } = await request.json()
     
+    // Input validation
+    if (!topText || typeof topText !== 'string') {
+      return NextResponse.json({ error: 'topText is required and must be a string' }, { status: 400 })
+    }
+    
+    if (!bottomText || typeof bottomText !== 'string') {
+      return NextResponse.json({ error: 'bottomText is required and must be a string' }, { status: 400 })
+    }
+    
+    if (!template || typeof template !== 'string') {
+      return NextResponse.json({ error: 'template is required and must be a string' }, { status: 400 })
+    }
+    
+    if (typeof engine !== 'string' || !['dall-e-3', 'google-imagen'].includes(engine)) {
+      return NextResponse.json({ error: 'engine must be "dall-e-3" or "google-imagen"' }, { status: 400 })
+    }
+    
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
