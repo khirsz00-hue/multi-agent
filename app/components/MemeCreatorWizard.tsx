@@ -29,16 +29,18 @@ const AI_ENGINES = [
     quality: 'Najlepsza', 
     speed: 'Średnia',
     recommended: true,
-    enabled: true
+    enabled: true,
+    description: 'OpenAI - najlepsze tła, tekst nakładany przez Sharp'
   },
   { 
     id: 'google-imagen', 
-    name: 'Google Imagen', 
+    name: 'Google Imagen 3', 
     cost: 0.02, 
     quality: 'Wysoka', 
     speed: 'Szybka',
     recommended: false,
-    enabled: false  // Not yet implemented
+    enabled: true,  // ENABLE THIS
+    description: 'Google AI - szybsze, tańsze, tekst nakładany przez Sharp'
   },
   { 
     id: 'replicate', 
@@ -47,7 +49,7 @@ const AI_ENGINES = [
     quality: 'Średnia', 
     speed: 'Szybka',
     recommended: false,
-    enabled: false  // Not yet implemented
+    enabled: false
   }
 ]
 
@@ -148,7 +150,7 @@ export function MemeCreatorWizard({ insights = [], spaceId }: MemeCreatorWizardP
     setStep('generate')
     
     try {
-      const res = await fetch('/api/meme/generate', {
+      const res = await fetch('/api/meme/generate-image', {  // NEW ENDPOINT
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -432,6 +434,11 @@ export function MemeCreatorWizard({ insights = [], spaceId }: MemeCreatorWizardP
                         <div className="text-sm text-gray-600">
                           Jakość: {engine.quality} • Szybkość: {engine.speed}
                         </div>
+                        {engine.description && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {engine.description}
+                          </div>
+                        )}
                       </div>
                       <div className="text-sm font-semibold">
                         ${engine.cost.toFixed(2)}
